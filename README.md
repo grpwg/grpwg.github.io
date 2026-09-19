@@ -33,7 +33,7 @@ npm run check:content   # 校验数据规则
 
 新增一期后重新执行 `npm run export:feed` 即可，页面与阵列会自动带上。**每列节目数不限**（当前 11 期分布在五个栏目：理论学习 / 组织与路线 / 青年与教育 / 工人运动 / 形势与时事）。
 
-封面放在 `public/covers/`：有专属封面的期次直接引用，其余回落到系列封面 `show.webp`。登记位置见 `scripts/fetch-feed.mjs` 顶部的 `COVER_BY_NUMBER`。字段与流程详见 [`content/README.md`](content/README.md)。
+封面直接使用 RSS 的单集图片（`itunes:image`）直链，未单独上传封面的期次回落到频道封面，无需在本地登记。字段与流程详见 [`content/README.md`](content/README.md)。
 
 ## 主要功能
 
@@ -55,9 +55,8 @@ npm run check:content   # 校验数据规则
 | [`src/boot.ts`](src/boot.ts)、[`src/boot-motion.ts`](src/boot-motion.ts) | 开场界面与逐帧时间轴 |
 | [`src/brand.ts`](src/brand.ts) | 共用的光辉革命 lockup |
 | [`content/episodes.json`](content/episodes.json) | 页面使用的节目数据（由 RSS 生成） |
-| [`scripts/fetch-feed.mjs`](scripts/fetch-feed.mjs) | RSS 抓取、解析与栏目/封面映射 |
+| [`scripts/fetch-feed.mjs`](scripts/fetch-feed.mjs) | RSS 抓取、解析与栏目映射 |
 | [`scripts/feed-content.mjs`](scripts/feed-content.mjs) | 节目数据校验 |
-| [`public/covers/`](public/covers/) | 节目封面与系列封面 |
 | [`public/assets/`](public/assets/) | 运行所需的 GLB 模型 |
 
 ## 操作

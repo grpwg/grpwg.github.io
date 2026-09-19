@@ -22,15 +22,6 @@ const COLUMN_BY_NUMBER = {
   6: "形势与时事", 10: "形势与时事",
 };
 
-// Episodes without dedicated artwork fall back to the shared series cover.
-const SERIES_COVER = "/covers/show.webp";
-const COVER_BY_NUMBER = {
-  7: "/covers/ep07.webp",
-  8: "/covers/ep08.webp",
-  9: "/covers/ep09.webp",
-  10: "/covers/ep10.webp",
-};
-
 // The feed titles most episodes only as "光辉革命播客第X期"; the descriptive
 // title lives in the show notes. These are the cases extraction cannot reach.
 const TITLE_BY_NUMBER = {
@@ -169,7 +160,7 @@ function parseFeed(xml) {
     summary: clean(tag(channelBlock, "description")),
     rss: FEED_URL,
     telegram: "https://t.me/redmopav",
-    cover: SERIES_COVER,
+    cover: attr(channelBlock, "itunes:image", "href") || null,
   };
 
   const items = xml.match(/<item>[\s\S]*?<\/item>/gi) ?? [];
@@ -188,7 +179,7 @@ function parseFeed(xml) {
       duration: duration || "--:--",
       durationSeconds: durationToSeconds(duration),
       audio: attr(item, "enclosure", "url"),
-      cover: COVER_BY_NUMBER[number] ?? SERIES_COVER,
+      cover: attr(item, "itunes:image", "href") || show.cover,
       summary: summary(html),
       chapters: chapters(html),
       sources: extractLinks(html).filter((link) => !/anchor\.fm|podcasters\.spotify/i.test(link.url)),

@@ -27,7 +27,7 @@ npm run check:content            # 校验规则与下载一致性
 | `pubDate`         | 发布日期（`YYYY-MM-DD`）                    |
 | `duration`        | 时长文本（`HH:MM:SS`）                      |
 | `audio`           | 单集音频直链                                |
-| `cover`           | 封面路径或 `null`（无图时由界面按设计生成） |
+| `cover`           | RSS 单集封面直链或 `null`（未上传封面时回落到频道封面） |
 | `summary`         | 节目简介                                    |
 | `chapters`        | 目录条目                                    |
 | `sources`         | 源文章 `{ label, url }` 列表                |
@@ -38,6 +38,7 @@ npm run check:content            # 校验规则与下载一致性
 ## 修改与验证
 
 1. 需要临时覆盖标题或栏目时，改 `scripts/fetch-feed.mjs` 顶部的 `TITLE_BY_NUMBER` / `COLUMN_BY_NUMBER`，再执行 `npm run export:feed`。
-2. 新增封面放进 `public/covers/`，在 `COVER_BY_NUMBER` 中登记文件名。
-3. 执行 `npm run export:episodes` 生成下载文件，再执行 `npm run check:content`。
-4. 在 `npm run dev` 中查看标题、详情、检索与播放结果。
+2. 执行 `npm run export:episodes` 生成下载文件，再执行 `npm run check:content`。
+3. 在 `npm run dev` 中查看标题、详情、检索与播放结果。
+
+封面直接使用 RSS 单集图片（`itunes:image`），无需在本地登记；修改后重新抓取一次即可。
