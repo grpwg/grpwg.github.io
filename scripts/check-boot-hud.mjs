@@ -15,7 +15,7 @@ try {
  await page.goto('http://127.0.0.1:5189/');await page.waitForFunction(()=>window.rhine?.stats().ready);await page.waitForTimeout(600);
  await page.evaluate(()=>rhine.seek(7));await page.waitForTimeout(150);
  const glyphs=await page.evaluate(async()=>{const text=document.querySelector('.boot-logo text'),first=text.firstChild;let mutations=0;const observer=new MutationObserver(records=>mutations+=records.length);observer.observe(text,{childList:true,characterData:true,subtree:true});await new Promise(r=>setTimeout(r,650));observer.disconnect();return {mutations,sameNode:first===text.firstChild,value:text.textContent}});
- assert.equal(glyphs.mutations,0,'Completed logo lettering must not be rebuilt each frame');assert.equal(glyphs.sameNode,true);assert.equal(glyphs.value,'RHINE·LAB');
+ assert.equal(glyphs.mutations,0,'Completed logo lettering must not be rebuilt each frame');assert.equal(glyphs.sameNode,true);assert.equal(glyphs.value,'光辉革命播客');
  await mkdir('verification/boot-hud',{recursive:true});
  for(const [name,time] of [['logo',6.5],['scan',15.3],['welcome',19.6]]) {
    await page.evaluate(time=>rhine.seek(time),time);await page.mouse.move(1450,120);await page.waitForTimeout(300);

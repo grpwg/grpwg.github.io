@@ -1,5 +1,4 @@
 import { bootMotion } from "./boot-motion";
-import { bootMarkContour } from "./brand";
 import { themeAmount } from "./theme-ui";
 import { BootLettering } from "./boot-lettering";
 
@@ -13,10 +12,7 @@ const arc = (r: number, start: number, sweep: number, x = 960, y = 540) => {
 
 export class BootSequence {
   private nodes: Map<string, HTMLElement> = new Map();
-  private contour: SVGPathElement;
-  private letters: SVGTextElement;
-  private plus: SVGPathElement;
-  private minus: SVGPathElement;
+  private contour: SVGElement;
   private brandLines: HTMLElement[];
   private scanPaths: SVGPathElement[];
   private orbitDots: SVGCircleElement[];
@@ -49,24 +45,7 @@ export class BootSequence {
       ".boot-white",
     ].forEach((s) => this.nodes.set(s, stage.querySelector<HTMLElement>(s)!));
     const mark = stage.querySelector<SVGSVGElement>(".boot-logo svg")!;
-    const original = mark.querySelector("path")!;
-    this.contour = original;
-    this.contour.setAttribute("d", bootMarkContour);
-    this.contour.setAttribute("pathLength", "1");
-    const symbols = mark.querySelector("path:not([pathLength])")!;
-    this.plus = document.createElementNS(ns, "path");
-    this.plus.setAttribute("d", "M44 70h50M69 45v50");
-    this.minus = document.createElementNS(ns, "path");
-    this.minus.setAttribute("d", "M219 70h44");
-    [this.plus, this.minus].forEach((p) => {
-      p.setAttribute("stroke", "currentColor");
-      p.setAttribute("stroke-width", "15");
-      mark.insertBefore(p, symbols);
-    });
-    symbols.remove();
-    this.letters = mark.querySelector("text")!;
-    this.letters.setAttribute("text-anchor", "start");
-    this.letters.setAttribute("x", "20");
+    this.contour = mark.querySelector<SVGElement>(".brand-lockup-body")!;
     this.brandLines = Array.from(
       stage.querySelector(".brand")!.children,
     ) as HTMLElement[];
@@ -104,7 +83,7 @@ export class BootSequence {
       el.replaceChildren(ink);
     });
     this.poweredHTML = this.el(".powered").innerHTML;
-    new BootLettering(this.brandLines[0], ["brand"]).setText("RHINE LAB");
+    // The corner branding is the shared lockup SVG, so it is not a lettering host.
     // Bind after collecting the original ring paths. Phrase artwork also has
     // SVG paths, and must never be included in the scan's animated geometry.
     this.accessLettering = new BootLettering(this.el(".access-text"), ["access"]);
@@ -117,7 +96,7 @@ export class BootSequence {
       [".welcome-database", "database", "INTERNAL DATABASE"],
     ] as const) new BootLettering(this.el(selector), [key]).setText(text);
     this.companyInk.forEach((el) =>
-      new BootLettering(el.querySelector("span")!, ["company"]).setText("RHINE LAB.LLC."),
+      new BootLettering(el.querySelector("span")!, ["company"]).setText("光辉革命播客"),
     );
   }
   private el(selector: string) {
@@ -135,30 +114,14 @@ export class BootSequence {
     this.opacity(".boot-logo", s.logoOpacity);
     this.el(".boot-logo").style.transform =
       `translate(${s.logo.offsetX}px, 1px)`;
-    this.contour.style.strokeDasharray = `${s.logo.length} ${1 - s.logo.length}`;
-    this.contour.style.strokeDashoffset = String(-s.logo.start);
-    this.contour.setAttribute("stroke-width", String(s.logo.strokeWidth));
-    // Preserve the SVG text node once each revealed letter is in place. Replacing
-    // it every frame invalidates glyph rasterization under the moving HUD.
-    if (this.letters.textContent !== s.logoLetters)
-      this.letters.textContent = s.logoLetters;
-    this.plus.style.opacity = this.minus.style.opacity =
-      s.logo.symbolScale > 0 ? "1" : "0";
-    this.plus.setAttribute(
-      "transform",
-      `translate(${s.logo.plusX} 70) rotate(${s.logo.plusAngle}) scale(${s.logo.symbolScale}) translate(-69 -70)`,
-    );
-    this.minus.setAttribute(
-      "d",
-      `M${-s.logo.minusWidth / 2} 0h${s.logo.minusWidth}`,
-    );
-    this.minus.setAttribute(
-      "transform",
-      `translate(${s.logo.minusX} 70) scale(${s.logo.symbolScale})`,
-    );
+    // The lockup is a filled silhouette, so the opening reveals it with a wipe
+    // driven by the same start/length track the stroked contour used.
+    const reveal = Math.max(0, Math.min(1, s.logo.start + s.logo.length));
+    this.contour.style.clipPath =
+      reveal >= 1 ? "" : `inset(0 ${100 * (1 - reveal)}% 0 0)`;
     this.opacity(".auth-status", s.authOpacity);
     this.authLettering.setText(s.auth);
-    this.opacity(".brand", 1);
+    // Corner branding visibility is CSS-driven from [data-mode]/[data-boot].
     this.el(".brand").style.transform = "none";
     this.brandLines.forEach((node, i) => {
       node.style.opacity = String(s.brand[i].opacity);
@@ -166,7 +129,7 @@ export class BootSequence {
     });
     this.opacity(".powered", s.poweredLetters > 0);
     this.el(".powered").style.clipPath =
-      `inset(0 ${100 * (1 - s.poweredLetters / 19)}% 0 0)`;
+      `inset(0 ${100 * (1 - s.poweredLetters / s.poweredTotal)}% 0 0)`;
     this.opacity(".scan", s.scanVisible);
     if (s.scanVisible) this.renderScan(s);
     this.opacity(".welcome", s.welcomeVisible ? s.welcomeOpacity : 0);

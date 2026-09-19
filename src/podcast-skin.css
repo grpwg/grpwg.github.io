@@ -1,0 +1,500 @@
+/* Light editorial surface: black type on white cards, red used only as an
+   accent. Replaces the archive callout with the card layout. */
+
+/* One lockup everywhere: rule, two-line name, latin line. Its viewBox is
+   square-ish, so each slot keeps the shared aspect instead of the old wordmark's. */
+.brand svg {
+  display: block;
+  width: 150px;
+  height: auto;
+}
+.boot-logo {
+  width: 320px;
+  height: 316px;
+  left: 500px;
+  top: 382px;
+}
+.welcome-logo {
+  width: 176px;
+  height: 174px;
+}
+.loading-mark {
+  width: 120px;
+  height: 118px;
+}
+
+/* The opening builds the same lockup in the centre, so the corner copy waits
+   for the archive instead of doubling it. */
+[data-mode="boot"] .brand {
+  opacity: 0;
+}
+
+.archive-callout {
+  position: absolute;
+  left: 940px;
+  top: 452px;
+  width: 900px;
+  padding: 46px 54px 42px 50px;
+  background: var(--theme-panel, #ffffff);
+  border-left: 7px solid var(--theme-accent, #c2192a);
+  box-shadow: 0 24px 70px rgba(23, 23, 26, 0.16);
+  color: var(--theme-ink, #17171a);
+}
+.callout-label {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-size: 13px;
+  letter-spacing: 2.6px;
+  text-transform: uppercase;
+  color: var(--theme-muted, #7a766f);
+}
+.callout-label i {
+  width: 26px;
+  height: 5px;
+  background: var(--theme-accent, #c2192a);
+}
+.archive-callout .file-title {
+  display: block;
+  width: 100%;
+  margin: 24px 0 0;
+  padding: 0;
+  font-size: 46px;
+  font-weight: 750;
+  line-height: 1.24;
+  letter-spacing: -0.5px;
+  text-align: left;
+  color: var(--theme-ink, #17171a);
+}
+.archive-callout .file-open {
+  display: none;
+}
+.callout-summary {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  overflow: hidden;
+  margin: 22px 0 0;
+  font-size: 18px;
+  line-height: 1.66;
+  color: var(--theme-muted, #7a766f);
+}
+.callout-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 34px;
+}
+.archive-callout .read-file {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin: 0;
+  padding: 17px 32px;
+  background: var(--theme-accent, #c2192a);
+  color: var(--theme-panel, #ffffff);
+  font-size: 17px;
+  letter-spacing: 1px;
+  transition: background 0.2s;
+}
+.archive-callout .read-file:hover {
+  background: #a8121f;
+}
+.play-glyph {
+  font-size: 13px;
+}
+.callout-duration {
+  display: flex;
+  align-items: center;
+  font-size: 16px;
+  color: var(--theme-muted, #7a766f);
+}
+.callout-duration b {
+  margin-right: 18px;
+  padding-right: 18px;
+  border-right: 1px solid var(--theme-line, #bdb8ad);
+  font-weight: 400;
+  color: var(--theme-ink, #17171a);
+}
+
+/* Red punctuation on the light chrome. */
+.archive-counter #selected-number {
+  color: var(--theme-accent, #c2192a);
+}
+.archive-counter i,
+.count-total {
+  color: var(--theme-muted, #7a766f);
+}
+.system-footer .status-light {
+  background: var(--theme-accent, #c2192a);
+}
+.hover-label {
+  background: var(--theme-panel, #ffffff);
+  color: var(--theme-ink, #17171a);
+  padding: 4px 10px;
+  box-shadow: 0 8px 24px rgba(23, 23, 26, 0.14);
+}
+.powered b {
+  color: var(--theme-accent, #c2192a);
+}
+.detail-content a,
+.tab-panel a {
+  color: inherit;
+  text-decoration: none;
+}
+.detail-content a:hover,
+.tab-panel a:hover {
+  text-decoration: underline;
+}
+
+/* The player keeps its own column so it never covers the notes. */
+.episode-player {
+  left: 59px;
+  top: 336px;
+  width: 520px;
+  gap: 18px;
+  align-items: flex-start;
+  padding: 0;
+  background: none;
+  backdrop-filter: none;
+  color: var(--theme-ink, #17171a);
+}
+.player-cover {
+  width: 70px;
+  height: 70px;
+  border: 0;
+  background: var(--theme-accent, #c2192a);
+}
+.player-kicker {
+  color: var(--theme-accent, #c2192a);
+  font-size: 11px;
+  letter-spacing: 2.2px;
+}
+.player-title {
+  font-size: 21px;
+  margin: 8px 0 6px;
+  white-space: normal;
+  color: var(--theme-ink, #17171a);
+}
+.player-subtitle {
+  font-size: 13px;
+  color: var(--theme-muted, #7a766f);
+}
+.player-controls {
+  margin-top: 18px;
+  gap: 14px;
+}
+.player-toggle {
+  width: 40px;
+  height: 40px;
+  border-color: var(--theme-accent, #c2192a);
+  background: var(--theme-accent, #c2192a);
+  color: var(--theme-panel, #ffffff);
+}
+.player-toggle:hover,
+.episode-player.is-playing .player-toggle {
+  background: #a8121f;
+  border-color: #a8121f;
+}
+.player-elapsed,
+.player-total {
+  font-size: 13px;
+  color: var(--theme-ink, #17171a);
+}
+.player-seek {
+  accent-color: var(--theme-accent, #c2192a);
+}
+.player-rate {
+  padding: 0;
+  border: 0;
+  font-size: 13px;
+  color: var(--theme-ink, #17171a);
+}
+
+/* Outside the episode page the player parks in the same left column, under the
+   corner branding, instead of travelling to the opposite corner. */
+.episode-player.is-docked {
+  left: 59px;
+  right: auto;
+  top: 300px;
+  bottom: auto;
+  width: 520px;
+  gap: 18px;
+  padding: 0;
+  background: none;
+  backdrop-filter: none;
+}
+.episode-player.is-docked .player-cover {
+  width: 70px;
+  height: 70px;
+}
+.episode-player.is-docked .player-title {
+  font-size: 21px;
+  margin: 8px 0 6px;
+}
+.episode-player.is-docked .player-controls {
+  margin-top: 18px;
+  gap: 14px;
+}
+.episode-player.is-docked .player-toggle {
+  width: 40px;
+  height: 40px;
+}
+
+/* ---- Episode page ---- */
+.detail-content {
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  padding-left: 30px;
+  padding-right: 6px;
+  padding-bottom: 8px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(23, 23, 26, 0.18) transparent;
+  color: var(--theme-ink, #17171a);
+}
+/* Desktop pins the column between the title and the powered line, so the page
+   never reaches the corner chrome. Compact and portrait keep their own rules. */
+/* Desktop anchors the column to the right edge — the stage widens with the
+   window, so a fixed left inset would strand empty space beside the panel. */
+[data-layout="desktop"] .detail-content {
+  left: auto;
+  right: 59px;
+  width: min(1100px, 44%);
+  top: 250px;
+  bottom: 166px;
+  max-height: none;
+}
+.detail-content h2 {
+  font-size: 44px;
+}
+.metadata dd {
+  font-size: 17px;
+}
+.tab-panel p {
+  font-size: 17px;
+}
+.detail-content::-webkit-scrollbar {
+  width: 5px;
+}
+.detail-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+.detail-content::-webkit-scrollbar-thumb {
+  background: rgba(23, 23, 26, 0.18);
+  border-radius: 3px;
+}
+.detail-content::-webkit-scrollbar-thumb:hover {
+  background: rgba(23, 23, 26, 0.32);
+}
+/* The red rule marks the title block only, not the whole column. */
+.detail-head {
+  margin-left: -30px;
+  padding-left: 23px;
+  padding-bottom: 22px;
+  border-left: 7px solid var(--theme-accent, #c2192a);
+  border-bottom: 1px solid var(--theme-line, #bdb8ad);
+}
+.detail-kicker {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+.detail-kicker span:first-child {
+  color: var(--theme-accent, #c2192a);
+  font-size: 13px;
+  letter-spacing: 2.4px;
+}
+.detail-kicker span:last-child {
+  color: var(--theme-muted, #7a766f);
+  font-size: 12px;
+}
+.detail-content h2 {
+  max-width: none;
+  margin: 22px 0 0;
+  font-size: 40px;
+  line-height: 1.28;
+  letter-spacing: -0.6px;
+  color: var(--theme-ink, #17171a);
+}
+.detail-lead {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  margin: 16px 0 0;
+  font-size: 16px;
+  line-height: 1.7;
+  color: var(--theme-muted, #7a766f);
+}
+.detail-play {
+  display: inline-flex;
+  align-items: center;
+  gap: 13px;
+  margin-top: 26px;
+  padding: 16px 34px;
+  background: var(--theme-accent, #c2192a);
+  color: var(--theme-panel, #ffffff);
+  font-size: 17px;
+  letter-spacing: 1px;
+  transition: background 0.2s;
+}
+.detail-play:hover {
+  background: #a8121f;
+}
+.detail-play > span {
+  font-size: 13px;
+}
+.detail-tabs {
+  gap: 40px;
+  margin-top: 40px;
+  border-bottom-color: var(--theme-line, #bdb8ad);
+}
+.detail-tabs button {
+  font-size: 13px;
+  color: var(--theme-muted, #7a766f);
+}
+.detail-tabs button.active {
+  color: var(--theme-ink, #17171a);
+}
+.detail-tabs .tab-indicator {
+  background: var(--theme-ink, #17171a);
+}
+.metadata {
+  grid-template-columns: repeat(4, 1fr);
+  gap: 22px;
+  margin: 26px 0 0;
+  padding-bottom: 26px;
+  border-bottom: 1px solid var(--theme-line, #bdb8ad);
+}
+.metadata dt {
+  font-size: 11px;
+  color: var(--theme-muted, #7a766f);
+}
+.metadata dd {
+  margin-top: 10px;
+  font-size: 16px;
+  color: var(--theme-ink, #17171a);
+}
+.tab-panel {
+  height: auto;
+  min-height: 0;
+  padding-top: 20px;
+}
+.panel-label {
+  font-size: 11px;
+  color: var(--theme-muted, #7a766f);
+}
+.tab-panel p {
+  font-size: 16px;
+  line-height: 1.8;
+  color: var(--theme-ink, #17171a);
+}
+.research-notes li {
+  font-size: 16px;
+  color: var(--theme-ink, #17171a);
+}
+/* Link rows follow the body size instead of the old 10px caption size. */
+.log-row {
+  font-size: 16px;
+  margin-top: 20px;
+}
+.log-row b {
+  font-size: 14px;
+}
+.tab-panel .log-note {
+  font-size: 16px;
+}
+.detail-actions {
+  gap: 0;
+  margin-top: 32px;
+}
+.solid-button {
+  height: 58px;
+  justify-content: flex-start;
+  gap: 14px;
+  background: var(--theme-panel, #ffffff);
+  border: 1px solid var(--theme-accent, #c2192a);
+  color: var(--theme-accent, #c2192a);
+  font-size: 19px;
+  font-weight: 600;
+  letter-spacing: 0.4px;
+}
+.solid-button:hover {
+  background: var(--theme-field, #e9e5df);
+}
+.bookmark-glyph {
+  margin-right: 0;
+  font-size: 17px;
+}
+/* The inherited `.solid-button > span` rule pins its children to 11px, so the
+   label span is restated here at the button's own size. */
+.solid-button > span {
+  font-size: 19px;
+  font-weight: 600;
+  letter-spacing: 0.4px;
+  color: inherit;
+}
+.solid-button .bookmark-glyph {
+  font-size: 17px;
+}
+.download-button {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  height: 58px;
+  padding: 0 28px;
+  background: var(--theme-panel, #ffffff);
+  border: 1px solid var(--theme-line, #bdb8ad);
+  color: var(--theme-ink, #17171a);
+  font-size: 19px;
+  font-weight: 600;
+  letter-spacing: 0.4px;
+}
+.download-button:hover {
+  background: var(--theme-field, #e9e5df);
+}
+.download-button > span {
+  font-size: 17px;
+}
+
+/* Episode stepper, centred under the page. */
+.detail-nav {
+  position: absolute;
+  left: 940px;
+  bottom: 92px;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 30px;
+  pointer-events: auto;
+}
+.detail-nav > button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 15px;
+  color: var(--theme-ink, #17171a);
+}
+.detail-nav > button:hover {
+  color: var(--theme-accent, #c2192a);
+}
+.detail-ticks {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.detail-ticks button {
+  width: 2px;
+  height: 15px;
+  padding: 0;
+  background: var(--theme-line, #bdb8ad);
+  transition: height 0.2s, background 0.2s;
+}
+.detail-ticks button:hover {
+  background: var(--theme-muted, #7a766f);
+}
+.detail-ticks button.active {
+  height: 21px;
+  background: var(--theme-accent, #c2192a);
+}
+
+

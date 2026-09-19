@@ -82,7 +82,9 @@ export function normalizeQuality(
   value: unknown,
   legacyHigh = true,
 ): RenderQuality {
-  const base = qualityPresets.original;
+  // Fresh visits start on the performance preset; other values only come from
+  // a saved preference or an explicit choice in settings.
+  const base = qualityPresets.performance;
   const v =
     value && typeof value === "object"
       ? (value as Record<string, unknown>)

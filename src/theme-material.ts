@@ -2,7 +2,8 @@ import * as THREE from "three";
 
 const surfaces: Record<string, string> = {
   Frosted_Polymer: "#626b70", Ivory_Edges: "#687277", Optical_Diffuser: "#192226",
-  Titanium_Fasteners: "#b1b9bb", Index_Inlay: "#c6a36b", Printed_Label: "#303a3e",
+  Titanium_Fasteners: "#b1b9bb", Index_Inlay: "#8c0f1a", Printed_Label: "#303a3e",
+  Champagne_Index: "#8c0f1a", Amber_Optical_Inlay: "#8c0f1a",
   Subsurface_Optics: "#939e9f", Optical_Edges: "#bbc3bc", Carbon_Ink: "#b6bdb8",
 };
 /** Extend existing optical shaders; one float per instance avoids new meshes or passes. */
@@ -10,7 +11,7 @@ export function themeMaterial(material: THREE.Material, name: string, instanced 
   const amount = { value: 0 };
   const before = material.onBeforeCompile;
   const cache = material.customProgramCacheKey.bind(material)();
-  const color = new THREE.Color(surfaces[name] ?? (name.includes("Orange") ? "#bb8850" : "#969f9f"));
+  const color = new THREE.Color(surfaces[name] ?? (name.includes("Orange") ? "#8c0f1a" : "#969f9f"));
   material.onBeforeCompile = (shader, renderer) => {
     before.call(material, shader, renderer);
     shader.uniforms.rhineTheme = amount;

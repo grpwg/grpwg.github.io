@@ -17,6 +17,7 @@ const typed = (text: string, f: number, start: number, end: number) =>
         ),
   );
 const at = (f: number, frames: number[]) => frames.includes(f);
+const POWERED = "POWERED BY 光辉革命播客";
 const accessCounts = [
   1, 1, 3, 4, 5, 6, 9, 11, 12, 14, 17, 18, 19, 20, 22, 23, 25, 26,
 ];
@@ -37,7 +38,7 @@ export function bootMotion(appTime: number) {
   let auth = "";
   if (f < 363) {
     auth = typed("ID CONFIRMED", f, 282, 295);
-    if (f >= 320) auth += " : " + typed("JOYCE MOORE", f, 321, 339);
+    if (f >= 320) auth += " : " + typed("REDMOLISHA", f, 321, 339);
   } else if (f < 421) auth = typed("REQUEST RECEIVED", f, 367, 389);
   else {
     auth = typed("START PROCESSING", f, 423, 440);
@@ -64,10 +65,11 @@ export function bootMotion(appTime: number) {
     accessOpacity: f >= 170 && f < 227 ? (f === 226 ? 0.25 : 1) : 0,
     logoOpacity: t >= 9.16 && t < 19.48 ? 1 : 0,
     logo: bootLogoTrack(frame),
-    logoLetters: typed("RHINE·LAB", f, 232, 255),
+    logoLetters: typed("光辉革命播客", f, 232, 255),
     authOpacity: f >= 281 && f < 487 ? 1 : 0,
     brand: [0, 1, 2].map((line) => brandTrack(frame, line)),
-    poweredLetters: typed("POWERED BY RHINE LAB", f, 279, 295).length,
+    poweredLetters: typed(POWERED, f, 279, 295).length,
+    poweredTotal: POWERED.length,
     scanVisible: t >= 19.48 && t < 22.76,
     scan,
     scanOrbit,

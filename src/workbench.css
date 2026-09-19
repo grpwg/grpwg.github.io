@@ -33,7 +33,7 @@
 .wb-rule i { display: block; height: 100%; background: #080a08; }
 .wb-muted { font-size: 12px; line-height: 1.9; color: #77756d; margin: 14px 0 0; }
 .wb-empty, .wb-event { font-size: 19px; line-height: 1.6; overflow-wrap: anywhere; }
-.wb-storage { font-size: 12px; color: #9b7247; line-height: 1.7; }
+.wb-storage { font-size: 12px; color: #c2192a; line-height: 1.7; }
 .wb-storage:empty { display: none; }
 .wb-media { display: flex; align-items: center; gap: 18px; }
 .wb-media img, .wb-cover { width: 96px; height: 96px; object-fit: cover; flex-shrink: 0; }
@@ -51,8 +51,8 @@
 .wb-nav button::before { content: ""; position: absolute; left: 0; top: 20px; width: 2px; height: 12px; background: #aaa59a; }
 .wb-nav button[aria-pressed="true"] { color: #080a08; }
 .wb-nav button[aria-pressed="true"]::before { top: 10px; height: 33px; background: #080a08; }
-.workbench button:hover { color: #9b7247; }
-.wb-nav button:hover::before { background: #a27849; }
+.workbench button:hover { color: #c2192a; }
+.wb-nav button:hover::before { background: #c2192a; }
 .wb-settings { padding: 16px 0; border-bottom: 1px solid #bdb8ad; }
 .wb-settings > div { display: flex; gap: 10px; margin-top: 12px; }
 .wb-settings button { padding: 12px; border: 1px solid #a6a49c; font-size: 13px; }

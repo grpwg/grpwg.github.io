@@ -1,115 +1,88 @@
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
 import { test } from "node:test";
-import {
-  loadContent,
-  validateContent,
-  archiveText,
-} from "./archive-content.mjs";
+import { loadContent, validateContent } from "./feed-content.mjs";
 import { escapeHtml } from "../src/html.ts";
 
 const content = await loadContent();
-test("all forty downloads match the shared content, including the UTF-8 BOM", async () => {
-  for (const record of content.records) {
-    assert.equal(
-      (
-        await readFile(
-          new URL(
-            `../public/archives/RHINE-LAB-${record.id}.txt`,
-            import.meta.url,
-          ),
-          "utf8",
-        )
-      ).replace(/\r\n/g, "\n"),
-      archiveText(record),
-    );
-  }
-});
 
 const invalidCases = [
   [
     "missing title",
     (c) => {
-      delete c.records[0].title;
+      delete c.episodes[0].title;
     },
-    /records\[0\].title/,
+    /episodes\[0\].title/,
   ],
   [
-    "blank abstract",
+    "blank summary",
     (c) => {
-      c.records[0].abstract = "  ";
+      c.episodes[0].summary = "  ";
     },
-    /abstract/,
+    /summary/,
   ],
   [
     "duplicate ID",
     (c) => {
-      c.records[1].id = "X-001";
+      c.episodes[1].id = "EP-00";
     },
-    /重复编号/,
+    /EP-00/,
   ],
   [
     "reordered ID",
     (c) => {
-      [c.records[0], c.records[1]] = [c.records[1], c.records[0]];
+      [c.episodes[0], c.episodes[1]] = [c.episodes[1], c.episodes[0]];
     },
-    /X-001/,
+    /EP-00/,
   ],
   [
-    "unknown category",
+    "unknown column",
     (c) => {
-      c.records[0].category = "未知";
+      c.episodes[0].column = "未知";
     },
-    /未知分类/,
+    /未知栏目/,
   ],
   [
-    "unbalanced columns",
+    "empty column",
     (c) => {
-      c.records[0].category = c.columns[0];
+      for (const episode of c.episodes)
+        if (episode.column === c.columns[0]) episode.column = c.columns[1];
     },
-    /八份档案/,
+    /至少需要一期节目/,
   ],
   [
-    "missing record",
+    "missing episodes",
     (c) => {
-      c.records.pop();
+      c.episodes = [];
     },
-    /四十份档案/,
+    /至少需要一期节目/,
   ],
   [
-    "null record",
+    "null episode",
     (c) => {
-      c.records[0] = null;
+      c.episodes[0] = null;
     },
-    /必须是档案对象/,
+    /必须是节目对象/,
   ],
   [
-    "empty findings",
+    "non-text chapters",
     (c) => {
-      c.records[0].findings = [];
+      c.episodes[0].chapters = [42];
     },
-    /findings/,
+    /chapters/,
   ],
   [
-    "non-text findings",
+    "unsafe audio URL",
     (c) => {
-      c.records[0].findings = [42];
+      c.episodes[0].audio = "javascript:alert(1)";
     },
-    /findings/,
+    /audio/,
   ],
   [
-    "unsafe URL",
+    "invalid audio URL",
     (c) => {
-      c.records[0].source = "javascript:alert(1)";
+      c.episodes[0].audio = "example.com";
     },
-    /HTTPS/,
-  ],
-  [
-    "invalid URL",
-    (c) => {
-      c.records[0].source = "example.com";
-    },
-    /HTTPS/,
+    /audio/,
   ],
   [
     "duplicate categories",
@@ -121,16 +94,16 @@ const invalidCases = [
   [
     "reserved category",
     (c) => {
-      c.categories[0] = "全部档案";
+      c.categories[0] = "全部节目";
     },
-    /全部档案/,
+    /全部节目/,
   ],
   [
     "mismatched columns",
     (c) => {
       c.columns[0] = "其他";
     },
-    /相同的五个分类/,
+    /相同的五个栏目/,
   ],
 ];
 for (const [name, mutate, error] of invalidCases) {
@@ -145,14 +118,13 @@ test("accepts independent filter and column order", () => {
   edited.categories.reverse();
   assert.equal(validateContent(edited), edited);
 });
-test("plain-text punctuation stays literal in HTML and downloadable text", () => {
+test("plain-text punctuation stays literal in HTML output", () => {
   const title = `<玻璃> & "实验" 'A'`;
   const edited = structuredClone(content);
-  edited.records[0].title = title;
+  edited.episodes[0].title = title;
   validateContent(edited);
   assert.equal(
     escapeHtml(title),
     "&lt;玻璃&gt; &amp; &quot;实验&quot; &#39;A&#39;",
   );
-  assert.ok(archiveText(edited.records[0]).includes(title));
 });

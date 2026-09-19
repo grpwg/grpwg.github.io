@@ -213,12 +213,15 @@ try {
     }
     // Run across a complete row cycle, checking physical direction at the seam.
     const loop = await stats(page);
-    for (let i = 0; i < 8; i++)
+    const cycle = await page.evaluate(
+      () => Number(document.querySelector(".count-total")?.textContent ?? 8),
+    );
+    for (let i = 0; i < cycle; i++)
       await page.locator('[data-action="next"]').click();
     assert.equal((await stats(page)).selected, loop.selected);
     assert.equal(
       (await stats(page)).selectedCell.row,
-      loop.selectedCell.row + 8,
+      loop.selectedCell.row + cycle,
     );
     await settle(page);
     const interrupted = await stats(page);

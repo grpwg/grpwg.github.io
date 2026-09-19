@@ -33,7 +33,6 @@ import {
   type ArchiveCell,
   type ArchiveNavigation,
 } from "./archive-loop";
-import { labelMarkSvg } from "./brand";
 import { archiveFraming } from "./viewport-layout";
 import { ArchiveDrag, ArchivePlaneMomentum, type DragAxis, type DragProjection, type DragPosition } from "./archive-drag";
 import { assetUrl as publicAsset } from "./asset-url";
@@ -232,7 +231,6 @@ export class ArchiveScene {
   private loaded = false;
   private labelCanvas = document.createElement("canvas");
   private labelTexture?: THREE.CanvasTexture;
-  private labelMark = new Image();
   private reduced = false;
   private quality = normalizeQuality(undefined);
   private appliedQuality = "";
@@ -269,7 +267,7 @@ export class ArchiveScene {
     this.renderer.toneMappingExposure = 1.05;
     this.renderer.domElement.setAttribute(
       "aria-label",
-      "三维研究档案阵列，点击选择，左右拖动切列，上下拖动或滚轮切换列内档案",
+      "三维节目阵列，点击选择，左右拖动切栏，上下拖动或滚轮切换栏内节目",
     );
     container.appendChild(this.renderer.domElement);
     this.renderer.domElement.addEventListener('webglcontextrestored', () => this.renderState.invalidate(), { signal: this.inputEvents.signal });
@@ -329,8 +327,6 @@ export class ArchiveScene {
     this.bindPointer();
   }
   async load(assetUrl = publicAsset("assets/archive-cassette.glb")) {
-    this.labelMark.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(labelMarkSvg)}`;
-    await this.labelMark.decode();
     const gltf = await new GLTFLoader().loadAsync(
       assetUrl,
     );
@@ -363,10 +359,10 @@ export class ArchiveScene {
         mat.attenuationDistance = 2;
       }
       if (name === "Internal_Ceramic") {
-        mat.color.set(this.lightingLook === "refined" ? "#c4baae" : "#c7beb6");
+        mat.color.set(this.lightingLook === "refined" ? "#a85c60" : "#a05458");
         mat.roughness = 0.6;
       }
-      if (name === "Printed_Label") mat.color.set("#eae5dc");
+      if (name === "Printed_Label") mat.color.set("#ffffff");
       if (name === "Ivory_Edges") {
         mat.color.set("#f0e7df");
         mat.roughness = 0.31;
@@ -390,6 +386,14 @@ export class ArchiveScene {
         mat.color.set(this.lightingLook === "refined" ? "#d8c7b5" : "#d4c7be");
         mat.roughness = 0.26;
         mat.metalness = 0.08;
+      }
+      // Gold and amber accents read as deep red. Set before the array check —
+      // surfaces that stay on the extracted cassette return early from there.
+      if (name === "Champagne_Index" || name === "Amber_Optical_Inlay")
+        mat.color.set("#8c0f1a");
+      if (name === "Index_Inlay") {
+        mat.color.set("#8c0f1a");
+        mat.metalness = 0.05;
       }
       configureInternalOptics(name, mat);
       if (name === "Carbon_Ink") continue;
@@ -446,12 +450,12 @@ export class ArchiveScene {
       if (name === "Ivory_Edges") {
         arrayMat.transmission = 0;
         arrayMat.color.set(
-          this.lightingLook === "refined" ? "#dcc9b0" : "#fff5e9",
+          this.lightingLook === "refined" ? "#dcc4c6" : "#fff7ed",
         );
         arrayMat.roughness = 0.38;
       }
       if (name === "Index_Inlay") {
-        arrayMat.color.set("#e4d6c5");
+        arrayMat.color.set("#8c0f1a");
         arrayMat.metalness = 0.05;
       }
       this.appearance.register(name, mat, arrayMat);
@@ -747,27 +751,30 @@ export class ArchiveScene {
   private drawLabel(index: number) {
     if (!this.labelTexture) return;
     const c = this.labelCanvas.getContext("2d")!;
-    c.fillStyle = "#e6e2d9";
+    c.fillStyle = "#e9e5df";
     c.fillRect(0, 0, 1024, 440);
-    c.fillStyle = "#171713";
-    c.fillRect(12, 12, 1000, 6);
-    c.fillRect(12, 419, 1000, 3);
-    c.font = "bold 81px MiSans";
-    c.fillText("RHINE LAB, LLC.", 22, 116);
-    c.font = "32px MiSans";
-    c.fillStyle = "#878476";
-    c.fillText("INTERNAL DATABASE", 25, 174);
-    c.fillStyle = "#171713";
-    c.font = "bold 130px MiSans";
-    c.fillText("NO." + String(index + 1).padStart(3, "0"), 22, 360);
-    c.fillRect(782, 32, 221, 39);
-    c.fillStyle = "#eee9de";
+    // Red spine and rule, echoing the lockup's vertical bar.
+    c.fillStyle = "#c2192a";
+    c.fillRect(28, 28, 18, 384);
+    c.fillRect(28, 28, 944, 7);
+    c.fillRect(28, 405, 944, 7);
+    c.font = "bold 76px MiSans";
+    c.fillStyle = "#17171a";
+    c.fillText("光辉革命播客", 78, 126);
+    c.font = "30px MiSans";
+    c.fillStyle = "#8c877f";
+    c.fillText("GLORIOUS REVOLUTION PODCAST", 80, 180);
+    c.fillStyle = "#17171a";
+    c.font = "bold 126px MiSans";
+    c.fillText("EP." + String(index).padStart(2, "0"), 78, 360);
+    c.fillStyle = "#c2192a";
+    c.fillRect(796, 44, 204, 42);
+    c.fillStyle = "#ffffff";
     c.font = "24px MiSans";
-    c.fillText("R L / I S", 809, 61);
-    c.fillStyle = "#171713";
-    c.font = "bold 64px MiSans";
-    c.fillText("INFO", 830, 143);
-    c.drawImage(this.labelMark, 790, 242, 210, 98);
+    c.fillText("G R / P C", 822, 73);
+    c.fillStyle = "#c2192a";
+    c.font = "bold 62px MiSans";
+    c.fillText("播客", 822, 158);
     this.labelTexture.needsUpdate = true;
   }
   private ensureInstanceCapacity(required: number) {

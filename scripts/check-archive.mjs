@@ -17,11 +17,11 @@ import {
   damp,
 } from "../src/motion.ts";
 
-assert.equal(records.length, 40);
+assert.equal(records.length, 11);
 const slots = new Set();
 for (let lane = 0; lane < archiveColumns.length; lane++) {
   const files = columnFiles(lane);
-  assert.equal(files.length, 8, "Every column has eight readable files");
+  assert.ok(files.length >= 1, "Every column has at least one episode");
   for (const index of files) {
     const location = fileLocation(index);
     assert.equal(location.lane, lane);
@@ -29,12 +29,14 @@ for (let lane = 0; lane < archiveColumns.length; lane++) {
     assert.ok(location.row >= 0 && location.row < 32);
     slots.add(location.slot);
     const record = records[index];
-    assert.ok(record.abstract.length > 70);
-    assert.equal(record.findings.length, 3);
-    assert.ok(new URL(record.source).protocol === "https:");
+    assert.ok(record.summary.length > 30);
+    assert.ok(Array.isArray(record.chapters));
+    assert.ok(new URL(record.audio).protocol === "https:");
+    for (const source of record.sources)
+      assert.ok(new URL(source.url).protocol === "https:");
   }
 }
-assert.equal(slots.size, 40, "No two documents occupy the same slot");
+assert.equal(slots.size, 11, "No two episodes occupy the same slot");
 const crests = Array.from({ length: 5 }, (_, lane) =>
   Math.max(
     ...Array.from({ length: 32 }, (_, row) => cinematicField(row, lane, 25.4)),
@@ -95,8 +97,8 @@ assert.ok(Math.abs(coarse.value - fine.value) < 1e-9);
 console.log(
   JSON.stringify(
     {
-      documents: records.length,
-      perColumn: 8,
+      episodes: records.length,
+      perColumn: archiveColumns.map((_, lane) => columnFiles(lane).length),
       crestsAt760: crests,
       maxFrameDelta: maxDelta,
       modelHeight: height,

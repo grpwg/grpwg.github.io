@@ -4,6 +4,7 @@ import { DocumentDecryption } from "./document-decryption";
 import "./document-decryption.css";
 import "./decryption.css";
 import { escapeHtml } from "./html";
+import { EpisodePlayer } from "./player";
 import { normalizeQuality, qualityPresets, type QualityPreset, type RenderQuality } from "./render-quality";
 import { qualityMarkup, syncQualityUI } from "./quality-settings";
 import { superPerformanceQuality, wallpaperQuality } from "./wallpaper-quality";
@@ -11,18 +12,19 @@ import "@kitlangton/rolling-number/styles.css";
 import "./style.css";
 import "./quality-settings.css";
 import "./responsive.css";
+import "./podcast-skin.css";
 import { viewportLayout, openingLayout } from "./viewport-layout";
 import { assetUrl } from "./asset-url";
 import { initPwa, pwaSettingsMarkup } from "./pwa";
 import { createRollingNumber, createRollingText } from "@kitlangton/rolling-number";
 import { ArchiveScene } from "./scene";
-import { ModelViewer } from "./model-viewer";
 import { ContentTransition, SurfaceTransition } from "./ui-transitions";
 import { BootSequence } from "./boot";
 import { loadBootWebfonts } from "./boot-lettering";
 import { wrap, type ArchiveNavigation } from "./archive-loop";
 import {
   records,
+  show,
   categories,
   archiveColumns,
   columnFiles,
@@ -54,38 +56,39 @@ $("#stage").innerHTML = `
   <div id="boot-background" class="boot-background"><svg viewBox="0 0 1920 1080" preserveAspectRatio="none"><g fill="none" stroke="#fff" stroke-width="3"><path d="M-210 705C-45 705 182 704 247 567C337 377 99 306 4 435S27 680 169 631C309 584 227 314 279 111S568-113 568-113"/><path d="M1560-80C1374 114 1671 168 1601 323S1371 367 1431 480S1692 666 1559 787S1329 886 1498 1130"/><circle cx="1450" cy="648" r="346"/><circle cx="1450" cy="648" r="348"/></g></svg></div>
   <header class="brand">${brandHeading}</header>
   <nav class="system-nav" aria-label="系统导航">
-    <button data-action="search"><span class="nav-glyph">⌕</span> ARCHIVE INDEX <span class="key">/</span></button>
-    <button data-action="saved" aria-label="查看收藏档案" title="收藏档案">＋ SAVED <span id="saved-count">00</span></button>
+    <button data-action="search"><span class="nav-glyph">⌕</span> EPISODE INDEX <span class="key">/</span></button>
+    <button data-action="saved" aria-label="查看收藏节目" title="收藏节目">＋ 收藏 <span id="saved-count">00</span></button>
     <button class="settings-button" data-action="settings" aria-label="系统设置" title="系统设置"><span class="settings-glyph" aria-hidden="true">◷</span><span class="settings-label">设置</span></button>
   </nav>
-  <button id="skip" class="skip" data-action="skip">ENTER SYSTEM <span>↗</span></button>
+  <button id="skip" class="skip" data-action="skip">进入终端 <span>↗</span></button>
   <section id="boot" class="boot" aria-label="系统启动">
     <div class="access-text">ACCESS</div>
     <div class="boot-logo">${logo}</div>
     <div class="auth-status"><span>▪</span> <span id="auth-message"></span><i></i></div>
     <div class="scan"><svg viewBox="0 0 1920 1080" aria-hidden="true"><g fill="none" stroke="#080a08" stroke-width="2" stroke-linecap="round"><path/><path stroke="#fff"/><path/><path/><path/><path/><circle class="orbit-dot" r="8" fill="#ed821b" stroke="none"/><circle class="orbit-dot" r="8" fill="#ed821b" stroke="none"/><circle class="scan-core" cx="960" cy="540" r="5" fill="#080a08" stroke="none"/></g></svg><span>PERMISSION AUTHORIZED</span></div>
-    <div class="welcome"><div class="welcome-panel"></div><div class="welcome-heading">WELCOME TO</div><div class="welcome-company"><strong>RHINE LAB.LLC.</strong><strong class="welcome-highlight" aria-hidden="true">RHINE LAB.LLC.</strong></div><div class="welcome-database">INTERNAL DATABASE</div><div class="welcome-logo">${logo}</div></div>
+    <div class="welcome"><div class="welcome-panel"></div><div class="welcome-heading">WELCOME TO</div><div class="welcome-company"><strong>光辉革命播客</strong><strong class="welcome-highlight" aria-hidden="true">光辉革命播客</strong></div><div class="welcome-database">INTERNAL DATABASE</div><div class="welcome-logo">${logo}</div></div>
   </section>
   <svg id="inspection-marks" viewBox="0 0 1920 1080" aria-hidden="true"><path id="inspection-lines"/><g id="inspection-corners"></g><circle id="inspection-point" r="1.8"/></svg>
   <div id="inspection-text" aria-hidden="true">CONFIDENTIALITY:<strong>GENERAL BUSINESS USE</strong></div>
-  <section id="archive-ui" class="archive-ui" aria-label="档案选择">
-    <div class="archive-callout"><div class="eyebrow">INTERNAL DATABASE <span>／</span> <span id="archive-category">机构档案</span></div><button class="file-title" data-action="open">FILE NUMBER: <span id="selected-id">X-<span id="selected-code">001</span></span><span class="file-open">↗</span></button><div class="callout-rule"><i></i></div><div class="file-summary"><span id="selected-title">莱茵生命</span><span id="selected-clearance">BUSINESS AREA</span></div><button class="read-file" data-action="open">ACCESS FILE <span>→</span></button></div>
-    <div id="hover-label" class="hover-label" hidden>X-<span id="hover-code">001</span> / <span id="hover-title"></span></div>
-    <div class="archive-counter"><span class="tiny-label">ARCHIVE / SELECT</span><div><span id="selected-number">01</span><i>/</i><span class="count-total">12</span></div></div>
-    <div class="archive-navigation"><button data-action="prev" aria-label="上一个档案">↑</button><div id="file-ticks" class="file-ticks"></div><button data-action="next" aria-label="下一个档案">↓</button></div>
-    <div class="column-navigation"><button data-action="column-prev" aria-label="上一列">←</button><div><span id="column-number">COLUMN <span id="column-index">03</span> / 05</span><strong id="column-name">机构档案</strong></div><button data-action="column-next" aria-label="下一列">→</button></div>
-    <div class="archive-hint"><kbd>←</kbd> <kbd>→</kbd> 切换列 <span>／</span> <kbd>↑</kbd> <kbd>↓</kbd> 前后档案 <span>／</span> <kbd>ENTER</kbd> 读取</div>
+  <section id="archive-ui" class="archive-ui" aria-label="节目选择">
+    <div class="archive-callout"><div class="callout-label"><i></i><span id="archive-category">理论学习</span></div><button class="file-title" data-action="open"><span id="selected-title">谁改造谁</span><span class="file-open">↗</span></button><div class="callout-summary" id="callout-summary"></div><div class="callout-foot"><button class="read-file" data-action="open"><span class="play-glyph">▶</span>播放本期</button><span class="callout-duration"><b id="selected-id">EP-<span id="selected-code">00</span></b><span id="selected-clearance">00:00</span></span></div></div>
+    <div id="hover-label" class="hover-label" hidden>EP-<span id="hover-code">00</span> / <span id="hover-title"></span></div>
+    <div class="archive-counter"><span class="tiny-label">EPISODE / SELECT</span><div><span id="selected-number">01</span><i>/</i><span class="count-total">12</span></div></div>
+    <div class="archive-navigation"><button data-action="prev" aria-label="上一期">↑</button><div id="file-ticks" class="file-ticks"></div><button data-action="next" aria-label="下一期">↓</button></div>
+    <div class="column-navigation"><button data-action="column-prev" aria-label="上一栏">←</button><div><span id="column-number">栏目 <span id="column-index">03</span> / 05</span><strong id="column-name">理论学习</strong></div><button data-action="column-next" aria-label="下一栏">→</button></div>
+    <div class="archive-hint"><kbd>←</kbd> <kbd>→</kbd> 切换栏目 <span>／</span> <kbd>↑</kbd> <kbd>↓</kbd> 前后一期 <span>／</span> <kbd>ENTER</kbd> 播放</div>
   </section>
-  <section id="detail-ui" class="detail-ui" aria-label="档案内容" hidden>
-    <button class="back-button" data-action="back">← <span>ARCHIVE OVERVIEW</span><small>ESC</small></button>
-    <div class="object-caption"><span id="object-id">NO.001</span><div>INTERNAL DATABASE</div><small>DRAG TO INSPECT <span>↔</span></small><button class="viewer-open" data-action="model-viewer">360° 查看文档模型 <span>↗</span></button></div>
+  <section id="detail-ui" class="detail-ui" aria-label="节目内容" hidden>
+    <button class="back-button" data-action="back">← <span>EPISODE LIST</span><small>ESC</small></button>
+    <div class="object-caption"><span id="object-id">EP.00</span><div>GLORIOUS REVOLUTION PODCAST</div><small>DRAG TO INSPECT <span>↔</span></small></div>
     <article id="detail-content" class="detail-content"></article>
+    <div class="detail-nav"><button data-action="episode-prev">← <span>上一期</span></button><div id="detail-ticks" class="detail-ticks"></div><button data-action="episode-next"><span>下一期</span> →</button></div>
   </section>
-  <div class="powered">POWERED BY <b>RHINE LAB</b><i></i></div>
-  <footer class="system-footer"><span><i class="status-light"></i> SESSION AUTHORIZED${isWallpaper ? '<button type="button" class="three-toggle" data-action="toggle-three" aria-pressed="true" title="卸载三维模型，保留 2D 界面">3D 开启</button>' : ''}</span><span>JOYCE MOORE <i>／</i> <span id="clock">00:00:00</span></span><button data-action="replay" title="重播启动流程">REINITIALIZE ↗</button></footer>
+  <div class="powered">POWERED BY <b>光辉革命播客</b><i></i></div>
+  <footer class="system-footer"><span><i class="status-light"></i> SESSION AUTHORIZED${isWallpaper ? '<button type="button" class="three-toggle" data-action="toggle-three" aria-pressed="true" title="卸载三维模型，保留 2D 界面">3D 开启</button>' : ''}</span><span>REDMOLISHA <i>／</i> <span id="clock">00:00:00</span></span><button data-action="replay" title="重播启动流程">重新初始化 ↗</button></footer>
   <div id="pwa-update-notice" class="pwa-update-notice" role="status" hidden><span>新版本已就绪</span><button data-pwa-action="update">更新并重启 ↻</button></div>
   <div id="modal-root"></div><div id="toast" class="toast" role="status"></div>
-  <div id="loading" class="loading"><div class="loading-mark">${logo}</div><span>CONNECTING TO INTERNAL DATABASE</span><i></i></div>
+  <div id="loading" class="loading"><div class="loading-mark">${logo}</div><span>CONNECTING TO FEED</span><i></i></div>
 `;
 
 $("#boot-background").insertAdjacentHTML(
@@ -93,7 +96,12 @@ $("#boot-background").insertAdjacentHTML(
   '<div class="boot-white"></div>',
 );
 const bootSequence = new BootSequence($("#stage"));
-$("#viewport").insertAdjacentHTML("beforeend", '<button class="mobile-entry" data-action="skip">进入档案 <span>→</span></button>');
+const player = new EpisodePlayer($("#stage"), (playing) => {
+  // The podcast takes the speakers; the terminal score steps aside.
+  musicSuppressed = playing;
+  configureAudio();
+});
+$("#viewport").insertAdjacentHTML("beforeend", '<button class="mobile-entry" data-action="skip">进入节目 <span>→</span></button>');
 
 type Mode = "boot" | "archive" | "detail";
 let mode: Mode = "boot",
@@ -103,7 +111,7 @@ let mode: Mode = "boot",
   ready = false;
 let modal: "search" | "saved" | "settings" | null = null,
   searchQuery = "",
-  filter = "全部档案";
+  filter = "全部节目";
 let activeTab = "overview";
 const reviewParams = new URLSearchParams(location.search);
 let frozenTime =
@@ -145,7 +153,7 @@ const saved = new Set<string>(readLocal<string[]>("rhine-saved", []));
 const storedPrefs = readLocal<Partial<{ sound: boolean; music: boolean; soundVolume: number; musicVolume: number; reduced: boolean; quality: boolean; rendering: RenderQuality; superPerformance: boolean; colorTheme: "light" | "dark" }>>("rhine-settings", {});
 const prefs = {
   sound: true,
-  music: storedPrefs.sound ?? true,
+  music: storedPrefs.music ?? false,
   soundVolume: .55,
   musicVolume: .5,
   reduced: matchMedia("(prefers-reduced-motion: reduce)").matches,
@@ -177,8 +185,8 @@ const columnCounter = createRollingNumber($("#column-index"), {
 });
 const codeOptions = {
   ...numberOptions,
-  format: { minimumIntegerDigits: 3, useGrouping: false },
-  value: 1,
+  format: { minimumIntegerDigits: 2, useGrouping: false },
+  value: 0,
 };
 const textOptions = {
   ...rollingMotion,
@@ -232,7 +240,6 @@ let scene: ArchiveScene | undefined;
 let threeState: "on" | "closing" | "off" | "loading" = "on";
 let resumeCell: { lane: number; row: number } | undefined;
 let resumeSelection = -1;
-let viewer: ModelViewer | undefined;
 const accessLog: { id: string; time: string }[] = [];
 const columnMemory = archiveColumns.map((_, lane) => columnFiles(lane)[0]);
 function recordAccess() {
@@ -262,15 +269,12 @@ function savePrefs() {
   scene?.setTheme(prefs.colorTheme === "dark", prefs.reduced || !started);
   document.querySelectorAll<HTMLElement>("[data-color-theme]").forEach(button => button.setAttribute("aria-pressed", String(button.dataset.colorTheme === prefs.colorTheme)));
   scene?.setSuperPerformance(superPerformanceEnabled());
-  viewer?.setSuperPerformance(superPerformanceEnabled());
   scene?.setQuality(effectiveRenderQuality());
-  viewer?.setQuality(effectiveRenderQuality());
   syncQualityUI(prefs.rendering);
   updateQualitySummary();
   fileCounter.update({ animated: !prefs.reduced && mode === "archive" });
   rollingTitles.forEach(title => title.update({ animated: !prefs.reduced && mode === "archive" }));
   columnCounter.update({ animated: !prefs.reduced && mode === "archive" });
-  selectedCode.update({ animated: !prefs.reduced && mode === "archive" });
   hoverCode.update({ animated: !prefs.reduced && mode === "archive" });
   $("#stage").classList.toggle("reduce-motion", prefs.reduced);
   syncWallpaperBackground();
@@ -307,7 +311,6 @@ function fit() {
   if (layoutKey !== previousLayout) {
     previousLayout = layoutKey;
     scene?.resize();
-    viewer?.resize();
   }
   updateQualitySummary();
   // Re-measure line covers and tab underline after wrapping changes.
@@ -366,10 +369,10 @@ function setMode(next: Mode) {
     if (!modal && next === "archive") $(".read-file").focus({ preventScroll: true });
   }
   $("#detail-ui").inert = next !== "detail" || Boolean(modal);
+  player.setDocked(next !== "detail");
   scene?.setMode(next === "boot" ? "hidden" : next);
   if (next !== "boot") {
     bootSequence.reset();
-    $(".file-title").firstChild!.textContent = "FILE NUMBER: ";
     $("#stage").dataset.boot = "done";
   }
   if (next === "detail" && previousMode !== "detail") {
@@ -400,6 +403,21 @@ function stepFile(direction: number) {
     { axis: "row", direction },
   );
 }
+/** The episode page keeps its own navigation so browsing stays on the page. */
+function openEpisode(index: number, direction = 0) {
+  selected = index;
+  columnMemory[fileLocation(index).lane] = index;
+  scene?.select(index, { axis: "row", direction });
+  updateSelection({ axis: "row", direction });
+  renderDetail();
+  player.setTrack(playerTrack(records[index]), true);
+  audio.play("tick");
+}
+function stepEpisode(direction: number) {
+  const files = columnFiles(fileLocation(selected).lane);
+  if (files.length < 2) return;
+  openEpisode(files[(files.indexOf(selected) + direction + files.length) % files.length], direction);
+}
 function stepColumn(direction: number) {
   const lane = fileLocation(selected).lane;
   const next = wrap(lane + direction, archiveColumns.length);
@@ -410,19 +428,19 @@ function updateSelection(navigation?: ArchiveNavigation) {
   const { lane } = fileLocation(selected);
   const files = columnFiles(lane);
   selectionTitle.update({ text: r.title, animated: !prefs.reduced && mode === "archive" });
-  clearanceTitle.update({ text: r.clearance, animated: !prefs.reduced && mode === "archive" });
-  categoryTitle.update({ text: r.category, animated: !prefs.reduced && mode === "archive" });
+  clearanceTitle.update({ text: r.duration, animated: !prefs.reduced && mode === "archive" });
+  categoryTitle.update({ text: r.column, animated: !prefs.reduced && mode === "archive" });
+  $("#callout-summary").textContent = r.summary.replace(/\s+/g, " ").slice(0, 180);
   const direction =
     navigation && "axis" in navigation
       ? navigation.direction > 0
         ? "up"
         : "down"
       : "auto";
-  selectedCode.update({
-    value: Number(r.id.slice(2)),
-    animated: !prefs.reduced && mode === "archive",
-    direction,
-  });
+  // The library prefixes its number cells with a stray sign, so the code is
+  // written straight to the DOM instead of rolled.
+  $("#selected-code").textContent = String(r.number).padStart(2, "0");
+  selectedCode.finish();
   fileCounter.update({
     value: files.indexOf(selected) + 1,
     animated: !prefs.reduced && mode === "archive",
@@ -446,7 +464,7 @@ function updateSelection(navigation?: ArchiveNavigation) {
   fileTicks.forEach((button, slot) => {
     const index = files[slot], record = records[index];
     button.dataset.select = String(index);
-    button.setAttribute("aria-label", `选择档案 ${record.id} ${record.title}`);
+    button.setAttribute("aria-label", `选择 ${record.id} ${record.title}`);
     button.title = `${record.id} · ${record.title}`;
     button.classList.toggle("selected", index === selected);
     button.setAttribute("aria-pressed", String(index === selected));
@@ -473,6 +491,7 @@ function openFile() {
   closeModal(() => {
     setMode("detail");
     audio.play("open");
+    player.play();
   });
 }
 function toggleSaved() {
@@ -485,37 +504,50 @@ function toggleSaved() {
   $("#saved-count").textContent = String(saved.size).padStart(2, "0");
   const button = $<HTMLButtonElement>('[data-action="bookmark"]');
   const added = saved.has(id);
-  button.firstChild!.textContent = added ? "− REMOVE FROM SAVED" : "＋ SAVE ARCHIVE";
-  button.querySelector("span")!.textContent = added ? "已收藏" : "收藏档案";
+  button.querySelector(".bookmark-label")!.textContent = added ? "已收藏" : "收藏本期";
   button.setAttribute("aria-pressed", String(added));
   bookmarkFeedback?.cancel();
   if (!prefs.reduced) bookmarkFeedback = button.animate(
-    [{ backgroundColor: "#67634c" }, { backgroundColor: "#252820" }],
+    [{ backgroundColor: "#d8a0a6" }, { backgroundColor: "#7d1218" }],
     { duration: 220, easing: "ease-out" },
   );
   audio.play("confirm");
-  notify(saved.has(id) ? "档案已加入收藏" : "已取消收藏");
+  notify(saved.has(id) ? "节目已加入收藏" : "已取消收藏");
 }
 function renderDetail() {
   tabTransition.cancel();
   const r = records[selected];
-  $("#object-id").textContent = "NO." + String(selected + 1).padStart(3, "0");
+  const primary = r.sources[0];
+  $("#object-id").textContent = "EP." + String(r.number).padStart(2, "0");
   $("#detail-content").innerHTML = `
-  <div class="detail-kicker"><span>FILE ${r.id}</span><span>${escapeHtml(r.clearance)}</span></div>
-  <h2>${escapeHtml(r.en)}</h2><div class="detail-title-cn">${escapeHtml(r.title)}<span>${escapeHtml(r.category)}</span></div>
-  <div class="detail-rule"></div>
-  <dl class="metadata"><div><dt>DEPARTMENT / 科室</dt><dd>${escapeHtml(r.department)}</dd></div><div><dt>COLLECTION / 编目范围</dt><dd>${escapeHtml(r.date)}</dd></div><div><dt>RELATED / 相关人物</dt><dd>${escapeHtml(r.lead)}</dd></div><div><dt>STATUS / 状态</dt><dd><i></i>${r.clearance === "RESTRICTED" ? "目录访问" : "已归档 · 可读取"}</dd></div></dl>
-  <div class="detail-tabs" role="tablist"><button id="tab-overview" class="active" role="tab" aria-controls="tab-panel" aria-selected="true" data-tab="overview">01 <span>概述</span></button><button id="tab-notes" role="tab" aria-controls="tab-panel" aria-selected="false" data-tab="notes">02 <span>研究记录</span></button><button id="tab-history" role="tab" aria-controls="tab-panel" aria-selected="false" data-tab="history">03 <span>访问日志</span></button><i class="tab-indicator" aria-hidden="true"></i></div>
+  <div class="detail-head"><div class="detail-kicker"><span>EPISODE: ${r.id}</span><span>${escapeHtml(r.pubDate)}</span></div><h2>${escapeHtml(r.title)}</h2></div>
+  <p class="detail-lead">${escapeHtml(r.summary.replace(/\s+/g, " ").slice(0, 92))}…</p>
+  <button class="detail-play" data-action="play"><span>▶</span>播放本期</button>
+  <div class="detail-tabs" role="tablist"><button id="tab-overview" class="active" role="tab" aria-controls="tab-panel" aria-selected="true" data-tab="overview">01 <span>简介</span></button><button id="tab-notes" role="tab" aria-controls="tab-panel" aria-selected="false" data-tab="notes">02 <span>目录</span></button><button id="tab-history" role="tab" aria-controls="tab-panel" aria-selected="false" data-tab="history">03 <span>链接</span></button><i class="tab-indicator" aria-hidden="true"></i></div>
+  <dl class="metadata"><div><dt>COLUMN / 栏目</dt><dd>${escapeHtml(r.column)}</dd></div><div><dt>PUBLISHED / 发布日期</dt><dd>${escapeHtml(r.pubDate)}</dd></div><div><dt>DURATION / 时长</dt><dd>${escapeHtml(r.duration)}</dd></div><div><dt>STATUS / 状态</dt><dd><i></i>已发布 · 可播放</dd></div></dl>
   <div id="tab-panel" class="tab-panel" role="tabpanel">${overview()}</div>
-  <div class="detail-actions"><button class="solid-button" data-action="bookmark">${saved.has(r.id) ? "− REMOVE FROM SAVED" : "＋ SAVE ARCHIVE"}<span>${saved.has(r.id) ? "已收藏" : "收藏档案"}</span></button><a class="export-button" href="${assetUrl(`archives/RHINE-LAB-${r.id}.txt`)}" download="RHINE-LAB-${r.id}.txt" aria-label="导出 ${r.id} 档案">EXPORT <span>↓</span></a></div>
-  <div class="detail-footnote"><a href="${escapeHtml(r.source)}" target="_blank" rel="noopener">设定参考 ↗</a><span>${String(selected + 1).padStart(3, "0")} / ${String(records.length).padStart(3, "0")}</span></div>`;
+  <div class="detail-actions"><button class="solid-button" data-action="bookmark"><span class="bookmark-glyph">▣</span><span class="bookmark-label">${saved.has(r.id) ? "已收藏" : "收藏本期"}</span></button><a class="download-button" href="${escapeHtml(r.audio)}" target="_blank" rel="noopener"><span>⤓</span>下载音频</a></div>`;
   $("#detail-content").setAttribute("tabindex", "-1");
   $('[data-action="bookmark"]').setAttribute("aria-pressed", String(saved.has(r.id)));
+  const siblings = columnFiles(fileLocation(selected).lane);
+  $("#detail-ticks").innerHTML = siblings
+    .map((index) => `<button data-action="episode-select" data-index="${index}" class="${index === selected ? "active" : ""}" aria-label="${records[index].id} ${escapeHtml(records[index].title)}"></button>`)
+    .join("");
+  player.setTrack(playerTrack(r));
   documentDecryption.reset($("#detail-content"), prefs.reduced || !scene || scene.decryptionFrame.phase === "clear");
   setTab(activeTab, false);
 }
+function playerTrack(r: (typeof records)[number]) {
+  return {
+    id: r.id,
+    title: r.title,
+    subtitle: `第 ${String(r.number).padStart(2, "0")} 期 · ${r.column} · ${r.duration}`,
+    audio: r.audio,
+    cover: r.cover,
+  };
+}
 function overview() {
-  return `<div class="panel-label">ABSTRACT / 摘要</div><p>${escapeHtml(records[selected].abstract)}</p>`;
+  return `<div class="panel-label">SUMMARY / 简介</div><p>${escapeHtml(records[selected].summary)}</p>`;
 }
 function setTab(tab: string, sound = true) {
   if (sound && tab === activeTab) return;
@@ -536,17 +568,8 @@ function setTab(tab: string, sound = true) {
     tab === "overview"
       ? overview()
       : tab === "notes"
-        ? `<div class="panel-label">RESEARCH NOTES / 研究记录</div><ol class="research-notes">${r.findings.map((f, i) => `<li><span>${String(i + 1).padStart(2, "0")}</span>${escapeHtml(f)}</li>`).join("")}</ol>`
-        : `<div class="panel-label">ACCESS LOG / 本次访问</div>${accessLog
-            .filter((entry) => entry.id === r.id)
-            .slice(0, 4)
-            .map(
-              (entry) =>
-                `<div class="log-row"><span>${entry.time}</span><span>JOYCE MOORE</span><b>READ AUTHORIZED</b></div>`,
-            )
-            .join(
-              "",
-            )}<p class="log-note">本次会话已通过身份验证。档案内容以当前终端可访问范围展示。</p>`;
+        ? `<div class="panel-label">CHAPTERS / 目录</div>${r.chapters.length ? `<ol class="research-notes">${r.chapters.map((chapter, i) => `<li><span>${String(i + 1).padStart(2, "0")}</span>${escapeHtml(chapter)}</li>`).join("")}</ol>` : `<p class="log-note">本期未提供目录。</p>`}`
+        : `<div class="panel-label">LINKS / 相关链接</div>${r.sources.map((source) => `<div class="log-row"><span>源文章</span><span>${escapeHtml(source.label)}</span><b><a href="${escapeHtml(source.url)}" target="_blank" rel="noopener">打开 ↗</a></b></div>`).join("")}<div class="log-row"><span>订阅</span><span>RSS</span><b><a href="${escapeHtml(show.rss)}" target="_blank" rel="noopener">打开 ↗</a></b></div><div class="log-row"><span>电报</span><span>频道</span><b><a href="${escapeHtml(show.telegram)}" target="_blank" rel="noopener">打开 ↗</a></b></div>${r.music ? `<p class="log-note">${escapeHtml(r.music)}</p>` : ""}`;
   $("#tab-panel").scrollTop = 0;
   documentDecryption.refresh();
   if (sound) {
@@ -573,7 +596,7 @@ function openModal(kind: NonNullable<typeof modal>) {
   modalClosing = false;
   modal = kind;
   searchQuery = "";
-  filter = "全部档案";
+  filter = "全部节目";
   audio.play("page-open");
   renderModal();
 }
@@ -602,7 +625,7 @@ function renderModal() {
   if (!modal) return;
   modalTransition?.dispose();
   $("#modal-root").innerHTML =
-    `<div class="modal-backdrop"><section class="terminal-modal ${modal === "settings" ? "settings-modal" : ""}" role="dialog" aria-modal="true" aria-label="${modal === "settings" ? "系统设置" : modal === "saved" ? "收藏档案" : "档案检索"}"><div class="modal-top"><span>RHINE LAB / ${modal === "settings" ? "SYSTEM PREFERENCES" : "ARCHIVE DIRECTORY"}</span><button data-action="close-modal" aria-label="关闭窗口">CLOSE <span>×</span></button></div>${modal === "settings" ? settingsMarkup() : `<h2>${modal === "saved" ? "SAVED ARCHIVES" : "ARCHIVE INDEX"}<small>${modal === "saved" ? "收藏档案" : "内部档案检索"}</small></h2><div class="search-field"><span>⌕</span><input id="archive-search" type="search" autocomplete="off" placeholder="输入档案编号、名称或科室" aria-label="检索档案"/><span class="key">ESC</span></div><div class="category-filters">${categories.map((c, i) => `<button data-filter="${escapeHtml(c)}" class="${i === 0 ? "active" : ""}">${escapeHtml(c)}</button>`).join("")}</div><div class="result-header"><span>FILE / 档案</span><span>DEPARTMENT / 科室</span><span>ACCESS</span></div><div id="search-results" class="search-results"></div><div class="modal-bottom"><span id="result-count"></span><span>INTERNAL DATABASE <i>●</i> CONNECTED</span></div>`}</section></div>`;
+    `<div class="modal-backdrop"><section class="terminal-modal ${modal === "settings" ? "settings-modal" : ""}" role="dialog" aria-modal="true" aria-label="${modal === "settings" ? "系统设置" : modal === "saved" ? "收藏节目" : "节目检索"}"><div class="modal-top"><span>光辉革命播客 / ${modal === "settings" ? "SYSTEM PREFERENCES" : "EPISODE DIRECTORY"}</span><button data-action="close-modal" aria-label="关闭窗口">CLOSE <span>×</span></button></div>${modal === "settings" ? settingsMarkup() : `<h2>${modal === "saved" ? "SAVED EPISODES" : "EPISODE INDEX"}<small>${modal === "saved" ? "收藏节目" : "全部节目检索"}</small></h2><div class="search-field"><span>⌕</span><input id="archive-search" type="search" autocomplete="off" placeholder="输入期号、标题或栏目" aria-label="检索节目"/><span class="key">ESC</span></div><div class="category-filters">${categories.map((c, i) => `<button data-filter="${escapeHtml(c)}" class="${i === 0 ? "active" : ""}">${escapeHtml(c)}</button>`).join("")}</div><div class="result-header"><span>EPISODE / 节目</span><span>PUBLISHED / 发布</span><span>DURATION</span></div><div id="search-results" class="search-results"></div><div class="modal-bottom"><span id="result-count"></span><span>GLORIOUS REVOLUTION <i>●</i> CONNECTED</span></div>`}</section></div>`;
   const backdrop = $(".modal-backdrop");
   backdrop.hidden = true;
   modalTransition = new SurfaceTransition(backdrop, $(".terminal-modal"));
@@ -629,8 +652,8 @@ function renderResults() {
     .filter(
       ({ r }) =>
         (modal !== "saved" || saved.has(r.id)) &&
-        (filter === "全部档案" || r.category === filter) &&
-        `${r.id} ${r.title} ${r.en} ${r.department} ${r.lead}`
+        (filter === "全部节目" || r.column === filter) &&
+        `${r.id} ${r.number} ${r.title} ${r.column}`
           .toLowerCase()
           .includes(searchQuery.toLowerCase()),
     );
@@ -638,12 +661,12 @@ function renderResults() {
     ? results
         .map(
           ({ r, i }) =>
-            `<button class="result-row" data-result="${i}"><span class="result-name"><b>${r.id}</b><span>${escapeHtml(r.title)}<small>${escapeHtml(r.en)}</small></span>${saved.has(r.id) ? "<i>＋</i>" : ""}</span><span>${escapeHtml(r.department)}</span><span>${r.clearance === "RESTRICTED" ? "CATALOG ONLY" : "AUTHORIZED"} <i>↗</i></span></button>`,
+            `<button class="result-row" data-result="${i}"><span class="result-name"><b>${r.id}</b><span>${escapeHtml(r.title)}<small>${escapeHtml(r.column)}</small></span>${saved.has(r.id) ? "<i>＋</i>" : ""}</span><span>${escapeHtml(r.pubDate)}</span><span>${escapeHtml(r.duration)} <i>↗</i></span></button>`,
         )
         .join("")
-    : `<div class="empty-results"><span>∅</span><strong>${modal === "saved" && !searchQuery ? "尚无收藏档案" : "没有匹配的档案"}</strong><p>${modal === "saved" && !searchQuery ? "读取档案时，选择 SAVE ARCHIVE 将其保存在此处。" : "尝试其他名称、档案编号，或切换科室分类。"}</p><button data-action="reset-search">${modal === "saved" ? "查看全部档案 →" : "重置检索 →"}</button></div>`;
+    : `<div class="empty-results"><span>∅</span><strong>${modal === "saved" && !searchQuery ? "尚无收藏节目" : "没有匹配的节目"}</strong><p>${modal === "saved" && !searchQuery ? "播放节目时，选择「收藏本期」将其保存在此处。" : "尝试其他标题、期号，或切换栏目。"}</p><button data-action="reset-search">${modal === "saved" ? "查看全部节目 →" : "重置检索 →"}</button></div>`;
   $("#result-count").textContent =
-    `${String(results.length).padStart(2, "0")} RECORDS FOUND`;
+    `${String(results.length).padStart(2, "0")} EPISODES FOUND`;
 }
 function updateQualitySummary() {
   const summary = document.querySelector("#quality-summary");
@@ -659,7 +682,7 @@ function motionSettingsMarkup() {
     : "当前使用完整动效。"}</p>${prefs.reduced ? '<button data-action="enable-motion">启用完整动效并重播 ↻</button>' : ""}</div>`;
 }
 function settingsMarkup() {
-  return `<h2>SYSTEM SETTINGS<small>终端偏好设置</small></h2><p class="settings-intro">JOYCE MOORE <span>·</span> SESSION AUTHORIZED</p>${isWallpaper ? '<p class="wallpaper-settings-note">每次启动都会读取 Wallpaper Engine 中的设置。在此修改仅对当前运行生效，无法持久保存；如需保留，请在 Wallpaper Engine 的壁纸属性中调整。</p>' : ""}<div class="settings-list">${themeSettingsMarkup(prefs.colorTheme === "dark")}${!isWallpaper ? `<label><div><strong>SUPER PERFORMANCE</strong><span>降低三维画质和渲染分辨率，保留完整动效；关闭后恢复原画质</span></div><input type="checkbox" data-pref="superPerformance" ${prefs.superPerformance ? "checked" : ""}/><i class="toggle"></i></label>` : ""}${workbench?.settingsMarkup() ?? ""}${audioSettingsMarkup(prefs)}<label><div><strong>REDUCED MOTION</strong><span>跳过开机动画，简化选档、镜头和文字动效</span></div><input type="checkbox" data-pref="reduced" ${prefs.reduced ? "checked" : ""}/><i class="toggle"></i></label></div>${motionSettingsMarkup()}${qualityMarkup(prefs.rendering)}${pwaSettingsMarkup()}<div class="settings-shortcuts">${isWallpaper ? '<span>DESKTOP CONTROLS</span><p>拖动阵列或点击界面按钮浏览档案。桌面模式下，方向键与滚轮可能无法传入壁纸。</p>' : '<span>KEYBOARD CONTROLS</span><p><kbd>←</kbd><kbd>→</kbd> 切列 <kbd>↑</kbd><kbd>↓</kbd> 选档 <kbd>ENTER</kbd> 读取 <kbd>/</kbd> 检索 <kbd>ESC</kbd> 返回</p>'}</div><div class="settings-bottom">${!isWallpaper && document.fullscreenEnabled ? '<button data-action="fullscreen">FULLSCREEN <span>↗</span></button>' : ''}<button data-action="restart">REINITIALIZE SYSTEM <span>↻</span></button></div><div class="modal-bottom"><span>ANALYSIS OS / 1.0 · 使用 MiSans 字体（小米） <a href="${assetUrl("fonts/MiSans-license.pdf")}" target="_blank" rel="noopener">字体许可</a></span><span>POWERED BY RHINE LAB</span></div>`;
+  return `<h2>SYSTEM SETTINGS<small>终端偏好设置</small></h2><p class="settings-intro">REDMOLISHA <span>·</span> SESSION AUTHORIZED</p>${isWallpaper ? '<p class="wallpaper-settings-note">每次启动都会读取 Wallpaper Engine 中的设置。在此修改仅对当前运行生效，无法持久保存；如需保留，请在 Wallpaper Engine 的壁纸属性中调整。</p>' : ""}<div class="settings-list">${themeSettingsMarkup(prefs.colorTheme === "dark")}${!isWallpaper ? `<label><div><strong>SUPER PERFORMANCE</strong><span>降低三维画质和渲染分辨率，保留完整动效；关闭后恢复原画质</span></div><input type="checkbox" data-pref="superPerformance" ${prefs.superPerformance ? "checked" : ""}/><i class="toggle"></i></label>` : ""}${workbench?.settingsMarkup() ?? ""}${audioSettingsMarkup(prefs)}<label><div><strong>REDUCED MOTION</strong><span>跳过开机动画，简化选档、镜头和文字动效</span></div><input type="checkbox" data-pref="reduced" ${prefs.reduced ? "checked" : ""}/><i class="toggle"></i></label></div>${motionSettingsMarkup()}${qualityMarkup(prefs.rendering)}${pwaSettingsMarkup()}<div class="settings-shortcuts">${isWallpaper ? '<span>DESKTOP CONTROLS</span><p>拖动阵列或点击界面按钮浏览节目。桌面模式下，方向键与滚轮可能无法传入壁纸。</p>' : '<span>KEYBOARD CONTROLS</span><p><kbd>←</kbd><kbd>→</kbd> 切栏 <kbd>↑</kbd><kbd>↓</kbd> 选期 <kbd>ENTER</kbd> 播放 <kbd>/</kbd> 检索 <kbd>ESC</kbd> 返回</p>'}</div><div class="settings-bottom">${!isWallpaper && document.fullscreenEnabled ? '<button data-action="fullscreen">FULLSCREEN <span>↗</span></button>' : ''}<button data-action="restart">REINITIALIZE SYSTEM <span>↻</span></button></div><div class="modal-bottom"><span>GLORIOUS REVOLUTION PODCAST / 1.0 · 使用 MiSans 字体（小米） <a href="${assetUrl("fonts/MiSans-license.pdf")}" target="_blank" rel="noopener">字体许可</a></span><span>POWERED BY 光辉革命播客</span></div>`;
 }
 
 document.addEventListener("input", (e) => {
@@ -745,24 +768,11 @@ document.addEventListener("click", (e) => {
   if (action === "column-prev") stepColumn(-1);
   if (action === "column-next") stepColumn(1);
   if (action === "open") openFile();
-  if (action === "model-viewer" && mode === "detail" && scene) {
-    const activeScene = scene;
-    // Safari does not always focus a button when it is tapped. Capture the
-    // actual opener so closing the modal reliably restores the right control.
-    el.focus({ preventScroll: true });
-    viewer ??= new ModelViewer($("#stage"), () => { audio.setScene(mode); audio.play("page-close"); }, (sound) => audio.play(sound === "tick" ? "ui-tick" : sound));
-    audio.setScene("viewer");
-    viewer.setSuperPerformance(superPerformanceEnabled());
-    viewer.setQuality(effectiveRenderQuality());
-    scene.finishDecryption();
-    viewer.open(
-      records[selected].id,
-      records[selected].title,
-      () => activeScene.createAssemblyModel(),
-      prefs.reduced,
-    );
-    audio.play("page-open");
-  }
+  if (action === "play") player.play();
+  if (action === "episode-prev") stepEpisode(-1);
+  if (action === "episode-next") stepEpisode(1);
+  if (action === "episode-select" && el.dataset.index)
+    openEpisode(Number(el.dataset.index));
   if (action === "back") {
     setMode("archive");
     audio.play("back");
@@ -776,7 +786,7 @@ document.addEventListener("click", (e) => {
   if (action === "reset-search") {
     modal = "search";
     searchQuery = "";
-    filter = "全部档案";
+    filter = "全部节目";
     renderModal();
   }
   if (action === "replay" || action === "restart") {
@@ -797,7 +807,6 @@ document.addEventListener("click", (e) => {
 });
 document.addEventListener("keydown", (e) => {
   if (!started) return;
-  if (viewer?.isOpen) return;
   if (playground?.active && !modal) {
     if (e.key === "Escape") { e.preventDefault(); playground.stop(); }
     else if (["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Enter", "/"].includes(e.key) && !(e.target instanceof HTMLButtonElement)) e.preventDefault();
@@ -851,11 +860,13 @@ document.addEventListener("keydown", (e) => {
   }
   if (e.key === "ArrowLeft" && mode !== "boot") {
     e.preventDefault();
-    stepColumn(-1);
+    if (mode === "detail") stepEpisode(-1);
+    else stepColumn(-1);
   }
   if (e.key === "ArrowRight" && mode !== "boot") {
     e.preventDefault();
-    stepColumn(1);
+    if (mode === "detail") stepEpisode(1);
+    else stepColumn(1);
   }
   if (["ArrowUp", "ArrowDown"].includes(e.key) && mode !== "boot") {
     e.preventDefault();
@@ -910,15 +921,10 @@ function bootFrame(t: number) {
     $("#stage").dataset.boot = step;
     lastStep = step;
   }
-  $(".file-title").firstChild!.textContent =
-    step === "array"
-      ? "SELECTING FILES...".slice(0, Math.max(0, Math.floor((t - 21.94) * 18)))
-      : "FILE NUMBER: ";
   $("#stage").style.setProperty(
     "--entry-opacity",
     String(ease((t - 21.9) / 0.13)),
   );
-  $(".callout-rule").style.transform = `scaleX(${ease((t - 22.08) / 0.9)})`;
   const reveal = ease((t - 22) / 0.4),
     lift = ease((t - 26) / 1.8),
     zoom = 0.55 * ease((t - 27.3) / 1.65) + 0.45 * ease((t - 29.0) / 5.0);
@@ -946,7 +952,6 @@ function frame(ms: number) {
   const time = ms / 1000;
   const theme = scene?.themeAmount ?? (prefs.colorTheme === "dark" ? 1 : 0);
   paintTheme(theme);
-  viewer?.setTheme(theme);
   playground?.tick(time);
   const cinema =
     mode === "boot" && ready
@@ -954,8 +959,7 @@ function frame(ms: number) {
       : undefined;
   wallpaperEffects?.update(time, prefs.reduced);
   // The calibrated 2D opening fully covers the scene until array entry.
-  if (!viewer?.isOpen && (!cinema || cinema.time >= 21.9)) scene?.update(time, cinema);
-  viewer?.update(time);
+  if (!cinema || cinema.time >= 21.9) scene?.update(time, cinema);
   if (threeState === "closing" && scene?.presentationHidden) releaseThree();
   playground?.position();
   if (scene && mode === "detail") {
@@ -964,7 +968,8 @@ function frame(ms: number) {
     $("#detail-content").style.translate =
       `0 ${(1 - scene.detailVisibility) * 18}px`;
     $("#detail-content").inert = scene.detailVisibility < 0.1;
-    if (pendingDetailFocus && scene.detailVisibility >= 0.1 && !modal && !viewer?.isOpen) {
+    player.setOpacity(scene.detailVisibility);
+    if (pendingDetailFocus && scene.detailVisibility >= 0.1 && !modal) {
       $("#detail-content").focus({ preventScroll: true });
       pendingDetailFocus = false;
     }
@@ -990,11 +995,11 @@ function frame(ms: number) {
 function bindScene(scene: ArchiveScene, cell?: { lane: number; row: number }) {
     scene.select(selected, cell ? { cell } : undefined);
     scene.onSelect = (i, cell) => {
-      if (mode !== "archive" || modal || viewer?.isOpen) return;
+      if (mode !== "archive" || modal) return;
       select(i, cell ? { cell } : undefined);
     };
     scene.onNavigate = (axis, direction) => {
-      if (mode !== "archive" || modal || viewer?.isOpen) return;
+      if (mode !== "archive" || modal) return;
       if (axis === "lane") stepColumn(direction);
       else stepFile(direction);
     };
@@ -1031,7 +1036,6 @@ function syncThreeButton() {
 function releaseThree() {
   if (!scene) return;
   resumeCell = { ...scene.getStats().selectedCell }; resumeSelection = selected;
-  viewer?.dispose(); viewer = undefined;
   scene.dispose(); scene = undefined;
   if (mode === "detail") {
     $("#detail-content").style.opacity = "1";
@@ -1098,9 +1102,9 @@ async function start() {
       // With unicode-range faces, preload the opening's actual characters,
       // not every font shard. Other archive text loads on demand.
       document.fonts.load("300 20px MiSans", "ACCESS WELCOME TO INTERNAL DATABASE"),
-      document.fonts.load("400 20px MiSans", "身份信息确认请求已接收开始处理权限验证通过欢迎访问莱茵生命内部资料档案编号保密级别商业区选择档案：0123456789 JOYCE MOORE"),
-      document.fonts.load("600 20px MiSans", "SYNTHESIZE INFORMATION ANALYSIS OS"),
-      document.fonts.load("700 20px MiSans", "RHINE LAB WELCOME TO INTERNAL DATABASE"),
+      document.fonts.load("400 20px MiSans", "身份信息确认请求已接收开始处理权限验证通过欢迎访问光辉革命播客内部资料期号时长栏目选择节目：0123456789 REDMOLISHA"),
+      document.fonts.load("600 20px MiSans", "光辉革命 马列毛主义播客 PODCAST 让价值文章有声化"),
+      document.fonts.load("700 20px MiSans", "GLORIOUS REVOLUTION PODCAST WELCOME TO"),
     ]);
     if (scene) bindScene(scene);
     savePrefs();
@@ -1117,7 +1121,7 @@ async function start() {
   } catch (error) {
     console.error(error);
     $("#loading").innerHTML =
-      '<div class="error-state"><strong>CONNECTION INTERRUPTED</strong><p>三维档案资源未能载入。请确认浏览器已启用硬件加速，然后重新连接。</p><button onclick="location.reload()">RECONNECT →</button></div>';
+      '<div class="error-state"><strong>CONNECTION INTERRUPTED</strong><p>三维模型资源未能载入。请确认浏览器已启用硬件加速，然后重新连接。</p><button onclick="location.reload()">RECONNECT →</button></div>';
   }
 }
 function completeStartup(silent: boolean) {

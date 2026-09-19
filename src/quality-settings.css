@@ -102,7 +102,7 @@
 }
 .quality-range input {
   width: 250px;
-  accent-color: #565c46;
+  accent-color: #c2192a;
   cursor: pointer;
 }
 .quality-range output {
@@ -118,6 +118,6 @@
   margin: 12px 0 18px;
 }
 .quality-settings :is(select, input, summary):focus-visible {
-  outline: 2px solid #a67d48;
+  outline: 2px solid #c2192a;
   outline-offset: 4px;
 }
