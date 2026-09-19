@@ -13,7 +13,8 @@ const hasNovecento = ["Normal", "DemiBold", "Bold"].every(weight =>
   existsSync(`public/fonts/novecento/webFonts/NovecentoSansWide${weight}/font.woff2`),
 );
 export default defineConfig(({ mode }) => ({
-  base: mode === "wallpaper" ? "./" : "/",
+  // Subpath hosts (e.g. GitHub Pages project sites) set BASE_PATH to their path.
+  base: mode === "wallpaper" ? "./" : process.env.BASE_PATH || "/",
   define: {
     __RHINE_MODELS__: JSON.stringify(Object.fromEntries(models.map(model => [model.key,model.fileName]))),
     __RHINE_NOVECENTO__: JSON.stringify(hasNovecento),
