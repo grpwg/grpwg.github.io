@@ -56,39 +56,39 @@ $("#stage").innerHTML = `
   <div id="boot-background" class="boot-background"><svg viewBox="0 0 1920 1080" preserveAspectRatio="none"><g fill="none" stroke="#fff" stroke-width="3"><path d="M-210 705C-45 705 182 704 247 567C337 377 99 306 4 435S27 680 169 631C309 584 227 314 279 111S568-113 568-113"/><path d="M1560-80C1374 114 1671 168 1601 323S1371 367 1431 480S1692 666 1559 787S1329 886 1498 1130"/><circle cx="1450" cy="648" r="346"/><circle cx="1450" cy="648" r="348"/></g></svg></div>
   <header class="brand">${brandHeading}</header>
   <nav class="system-nav" aria-label="系统导航">
-    <button data-action="search"><span class="nav-glyph">⌕</span> EPISODE INDEX <span class="key">/</span></button>
+    <button data-action="search"><span class="nav-glyph">⌕</span> 往期节目 <span class="key">/</span></button>
     <button data-action="saved" aria-label="查看收藏节目" title="收藏节目">＋ 收藏 <span id="saved-count">00</span></button>
     <button class="settings-button" data-action="settings" aria-label="系统设置" title="系统设置"><span class="settings-glyph" aria-hidden="true">◷</span><span class="settings-label">设置</span></button>
   </nav>
   <button id="skip" class="skip" data-action="skip">进入终端 <span>↗</span></button>
   <section id="boot" class="boot" aria-label="系统启动">
-    <div class="access-text">ACCESS</div>
+    <div class="access-text">节目</div>
     <div class="boot-logo">${logo}</div>
     <div class="auth-status"><span>▪</span> <span id="auth-message"></span><i></i></div>
-    <div class="scan"><svg viewBox="0 0 1920 1080" aria-hidden="true"><g fill="none" stroke="#080a08" stroke-width="2" stroke-linecap="round"><path/><path stroke="#fff"/><path/><path/><path/><path/><circle class="orbit-dot" r="8" fill="#ed821b" stroke="none"/><circle class="orbit-dot" r="8" fill="#ed821b" stroke="none"/><circle class="scan-core" cx="960" cy="540" r="5" fill="#080a08" stroke="none"/></g></svg><span>PERMISSION AUTHORIZED</span></div>
-    <div class="welcome"><div class="welcome-panel"></div><div class="welcome-heading">WELCOME TO</div><div class="welcome-company"><strong>光辉革命播客</strong><strong class="welcome-highlight" aria-hidden="true">光辉革命播客</strong></div><div class="welcome-database">INTERNAL DATABASE</div><div class="welcome-logo">${logo}</div></div>
+    <div class="scan"><svg viewBox="0 0 1920 1080" aria-hidden="true"><g fill="none" stroke="#080a08" stroke-width="2" stroke-linecap="round"><path/><path stroke="#fff"/><path/><path/><path/><path/><circle class="orbit-dot" r="8" fill="#ed821b" stroke="none"/><circle class="orbit-dot" r="8" fill="#ed821b" stroke="none"/><circle class="scan-core" cx="960" cy="540" r="5" fill="#080a08" stroke="none"/></g></svg><span>音频已就绪</span></div>
+    <div class="welcome"><div class="welcome-panel"></div><div class="welcome-heading">欢迎来到</div><div class="welcome-company"><strong>光辉革命播客</strong><strong class="welcome-highlight" aria-hidden="true">光辉革命播客</strong></div><div class="welcome-database">让价值文章有声化</div><div class="welcome-logo">${logo}</div></div>
   </section>
   <svg id="inspection-marks" viewBox="0 0 1920 1080" aria-hidden="true"><path id="inspection-lines"/><g id="inspection-corners"></g><circle id="inspection-point" r="1.8"/></svg>
-  <div id="inspection-text" aria-hidden="true">CONFIDENTIALITY:<strong>GENERAL BUSINESS USE</strong></div>
+  <div id="inspection-text" aria-hidden="true">节目宗旨：<strong>让价值文章有声化</strong></div>
   <section id="archive-ui" class="archive-ui" aria-label="节目选择">
-    <div class="archive-callout"><div class="callout-label"><i></i><span id="archive-category">理论学习</span></div><button class="file-title" data-action="open"><span id="selected-title">谁改造谁</span><span class="file-open">↗</span></button><div class="callout-summary" id="callout-summary"></div><div class="callout-foot"><button class="read-file" data-action="open"><span class="play-glyph">▶</span>播放本期</button><span class="callout-duration"><b id="selected-id">EP-<span id="selected-code">00</span></b><span id="selected-clearance">00:00</span></span></div></div>
+    <div class="archive-callout"><div class="callout-label"><i></i><span id="archive-category">理论学习</span></div><button class="file-title" data-action="open"><span id="selected-title">谁改造谁</span><span id="selected-title-plain"></span><span class="file-open">↗</span></button><div class="callout-summary" id="callout-summary"></div><div class="callout-foot"><button class="read-file" data-action="open"><span class="play-glyph">▶</span>播放本期</button><span class="callout-duration"><b id="selected-id">EP-<span id="selected-code">00</span></b><span id="selected-clearance">00:00</span></span></div></div>
     <div id="hover-label" class="hover-label" hidden>EP-<span id="hover-code">00</span> / <span id="hover-title"></span></div>
-    <div class="archive-counter"><span class="tiny-label">EPISODE / SELECT</span><div><span id="selected-number">01</span><i>/</i><span class="count-total">12</span></div></div>
+    <div class="archive-counter"><span class="tiny-label">节目 / 选择</span><div><span id="selected-number">01</span><i>/</i><span class="count-total">12</span></div></div>
     <div class="archive-navigation"><button data-action="prev" aria-label="上一期">↑</button><div id="file-ticks" class="file-ticks"></div><button data-action="next" aria-label="下一期">↓</button></div>
     <div class="column-navigation"><button data-action="column-prev" aria-label="上一栏">←</button><div><span id="column-number">栏目 <span id="column-index">03</span> / 05</span><strong id="column-name">理论学习</strong></div><button data-action="column-next" aria-label="下一栏">→</button></div>
     <div class="archive-hint"><kbd>←</kbd> <kbd>→</kbd> 切换栏目 <span>／</span> <kbd>↑</kbd> <kbd>↓</kbd> 前后一期 <span>／</span> <kbd>ENTER</kbd> 播放</div>
   </section>
   <section id="detail-ui" class="detail-ui" aria-label="节目内容" hidden>
-    <button class="back-button" data-action="back">← <span>EPISODE LIST</span><small>ESC</small></button>
-    <div class="object-caption"><span id="object-id">EP.00</span><div>GLORIOUS REVOLUTION PODCAST</div><small>DRAG TO INSPECT <span>↔</span></small></div>
+    <button class="back-button" data-action="back">← <span>返回节目</span><small>ESC</small></button>
+    <div class="object-caption"><span id="object-id">EP.00</span><div>GLORIOUS REVOLUTION PODCAST</div><small>拖动查看 <span>↔</span></small></div>
     <article id="detail-content" class="detail-content"></article>
     <div class="detail-nav"><button data-action="episode-prev">← <span>上一期</span></button><div id="detail-ticks" class="detail-ticks"></div><button data-action="episode-next"><span>下一期</span> →</button></div>
   </section>
   <div class="powered">POWERED BY <b>光辉革命播客</b><i></i></div>
-  <footer class="system-footer"><span><i class="status-light"></i> SESSION AUTHORIZED${isWallpaper ? '<button type="button" class="three-toggle" data-action="toggle-three" aria-pressed="true" title="卸载三维模型，保留 2D 界面">3D 开启</button>' : ''}</span><span>REDMOLISHA <i>／</i> <span id="clock">00:00:00</span></span><button data-action="replay" title="重播启动流程">重新初始化 ↗</button></footer>
+  <footer class="system-footer"><span><i class="status-light"></i> 全世界无产者，联合起来${isWallpaper ? '<button type="button" class="three-toggle" data-action="toggle-three" aria-pressed="true" title="卸载三维模型，保留 2D 界面">3D 开启</button>' : ''}</span><span>光辉革命播客 <i>／</i> <span id="clock">00:00:00</span></span><button data-action="replay" title="重播启动流程">重新初始化 ↗</button></footer>
   <div id="pwa-update-notice" class="pwa-update-notice" role="status" hidden><span>新版本已就绪</span><button data-pwa-action="update">更新并重启 ↻</button></div>
   <div id="modal-root"></div><div id="toast" class="toast" role="status"></div>
-  <div id="loading" class="loading"><div class="loading-mark">${logo}</div><span>CONNECTING TO FEED</span><i></i></div>
+  <div id="loading" class="loading"><div class="loading-mark">${logo}</div><span>正在连接节目源</span><i></i></div>
 `;
 
 $("#boot-background").insertAdjacentHTML(
@@ -370,6 +370,9 @@ function setMode(next: Mode) {
   }
   $("#detail-ui").inert = next !== "detail" || Boolean(modal);
   player.setDocked(next !== "detail");
+  // The opening owns the screen; the player only appears once it hands over.
+  if (next === "boot") player.setOpacity(0);
+  else if (next !== "detail") player.setOpacity(1);
   scene?.setMode(next === "boot" ? "hidden" : next);
   if (next !== "boot") {
     bootSequence.reset();
@@ -428,9 +431,14 @@ function updateSelection(navigation?: ArchiveNavigation) {
   const { lane } = fileLocation(selected);
   const files = columnFiles(lane);
   selectionTitle.update({ text: r.title, animated: !prefs.reduced && mode === "archive" });
+  // Phones render the name as plain text: the rolling nodes cannot reflow.
+  $("#selected-title-plain").textContent = r.title;
   clearanceTitle.update({ text: r.duration, animated: !prefs.reduced && mode === "archive" });
   categoryTitle.update({ text: r.column, animated: !prefs.reduced && mode === "archive" });
   $("#callout-summary").textContent = r.summary.replace(/\s+/g, " ").slice(0, 180);
+  // Keep the player bar stocked so the phone home shows a live play button
+  // before the first episode is opened.
+  if (mode !== "boot") player.setTrack(playerTrack(r));
   const direction =
     navigation && "axis" in navigation
       ? navigation.direction > 0
@@ -520,9 +528,8 @@ function renderDetail() {
   const primary = r.sources[0];
   $("#object-id").textContent = "EP." + String(r.number).padStart(2, "0");
   $("#detail-content").innerHTML = `
-  <div class="detail-head"><div class="detail-kicker"><span>EPISODE: ${r.id}</span><span>${escapeHtml(r.pubDate)}</span></div><h2>${escapeHtml(r.title)}</h2></div>
+  <div class="detail-head"><div class="detail-kicker"><span>第 ${String(r.number).padStart(2, "0")} 期</span><span>${escapeHtml(r.pubDate)}</span></div><h2>${escapeHtml(r.title)}</h2></div>
   <p class="detail-lead">${escapeHtml(r.summary.replace(/\s+/g, " ").slice(0, 92))}…</p>
-  <button class="detail-play" data-action="play"><span>▶</span>播放本期</button>
   <div class="detail-tabs" role="tablist"><button id="tab-overview" class="active" role="tab" aria-controls="tab-panel" aria-selected="true" data-tab="overview">01 <span>简介</span></button><button id="tab-notes" role="tab" aria-controls="tab-panel" aria-selected="false" data-tab="notes">02 <span>目录</span></button><button id="tab-history" role="tab" aria-controls="tab-panel" aria-selected="false" data-tab="history">03 <span>链接</span></button><i class="tab-indicator" aria-hidden="true"></i></div>
   <dl class="metadata"><div><dt>COLUMN / 栏目</dt><dd>${escapeHtml(r.column)}</dd></div><div><dt>PUBLISHED / 发布日期</dt><dd>${escapeHtml(r.pubDate)}</dd></div><div><dt>DURATION / 时长</dt><dd>${escapeHtml(r.duration)}</dd></div><div><dt>STATUS / 状态</dt><dd><i></i>已发布 · 可播放</dd></div></dl>
   <div id="tab-panel" class="tab-panel" role="tabpanel">${overview()}</div>
@@ -625,7 +632,7 @@ function renderModal() {
   if (!modal) return;
   modalTransition?.dispose();
   $("#modal-root").innerHTML =
-    `<div class="modal-backdrop"><section class="terminal-modal ${modal === "settings" ? "settings-modal" : ""}" role="dialog" aria-modal="true" aria-label="${modal === "settings" ? "系统设置" : modal === "saved" ? "收藏节目" : "节目检索"}"><div class="modal-top"><span>光辉革命播客 / ${modal === "settings" ? "SYSTEM PREFERENCES" : "EPISODE DIRECTORY"}</span><button data-action="close-modal" aria-label="关闭窗口">CLOSE <span>×</span></button></div>${modal === "settings" ? settingsMarkup() : `<h2>${modal === "saved" ? "SAVED EPISODES" : "EPISODE INDEX"}<small>${modal === "saved" ? "收藏节目" : "全部节目检索"}</small></h2><div class="search-field"><span>⌕</span><input id="archive-search" type="search" autocomplete="off" placeholder="输入期号、标题或栏目" aria-label="检索节目"/><span class="key">ESC</span></div><div class="category-filters">${categories.map((c, i) => `<button data-filter="${escapeHtml(c)}" class="${i === 0 ? "active" : ""}">${escapeHtml(c)}</button>`).join("")}</div><div class="result-header"><span>EPISODE / 节目</span><span>PUBLISHED / 发布</span><span>DURATION</span></div><div id="search-results" class="search-results"></div><div class="modal-bottom"><span id="result-count"></span><span>GLORIOUS REVOLUTION <i>●</i> CONNECTED</span></div>`}</section></div>`;
+    `<div class="modal-backdrop"><section class="terminal-modal ${modal === "settings" ? "settings-modal" : ""}" role="dialog" aria-modal="true" aria-label="${modal === "settings" ? "系统设置" : modal === "saved" ? "收藏节目" : "节目检索"}"><div class="modal-top"><span>光辉革命播客 / ${modal === "settings" ? "SYSTEM PREFERENCES" : "EPISODE DIRECTORY"}</span><button data-action="close-modal" aria-label="关闭窗口">关闭 <span>×</span></button></div>${modal === "settings" ? settingsMarkup() : `<h2>${modal === "saved" ? "SAVED EPISODES" : "往期节目"}<small>${modal === "saved" ? "收藏节目" : "全部节目检索"}</small></h2><div class="search-field"><span>⌕</span><input id="archive-search" type="search" autocomplete="off" placeholder="输入期号、标题或栏目" aria-label="检索节目"/><span class="key">ESC</span></div><div class="category-filters">${categories.map((c, i) => `<button data-filter="${escapeHtml(c)}" class="${i === 0 ? "active" : ""}">${escapeHtml(c)}</button>`).join("")}</div><div class="result-header"><span>EPISODE / 节目</span><span>PUBLISHED / 发布</span><span>DURATION</span></div><div id="search-results" class="search-results"></div><div class="modal-bottom"><span id="result-count"></span><span>GLORIOUS REVOLUTION <i>●</i> CONNECTED</span></div>`}</section></div>`;
   const backdrop = $(".modal-backdrop");
   backdrop.hidden = true;
   modalTransition = new SurfaceTransition(backdrop, $(".terminal-modal"));
@@ -682,7 +689,7 @@ function motionSettingsMarkup() {
     : "当前使用完整动效。"}</p>${prefs.reduced ? '<button data-action="enable-motion">启用完整动效并重播 ↻</button>' : ""}</div>`;
 }
 function settingsMarkup() {
-  return `<h2>SYSTEM SETTINGS<small>终端偏好设置</small></h2><p class="settings-intro">REDMOLISHA <span>·</span> SESSION AUTHORIZED</p>${isWallpaper ? '<p class="wallpaper-settings-note">每次启动都会读取 Wallpaper Engine 中的设置。在此修改仅对当前运行生效，无法持久保存；如需保留，请在 Wallpaper Engine 的壁纸属性中调整。</p>' : ""}<div class="settings-list">${themeSettingsMarkup(prefs.colorTheme === "dark")}${!isWallpaper ? `<label><div><strong>SUPER PERFORMANCE</strong><span>降低三维画质和渲染分辨率，保留完整动效；关闭后恢复原画质</span></div><input type="checkbox" data-pref="superPerformance" ${prefs.superPerformance ? "checked" : ""}/><i class="toggle"></i></label>` : ""}${workbench?.settingsMarkup() ?? ""}${audioSettingsMarkup(prefs)}<label><div><strong>REDUCED MOTION</strong><span>跳过开机动画，简化选档、镜头和文字动效</span></div><input type="checkbox" data-pref="reduced" ${prefs.reduced ? "checked" : ""}/><i class="toggle"></i></label></div>${motionSettingsMarkup()}${qualityMarkup(prefs.rendering)}${pwaSettingsMarkup()}<div class="settings-shortcuts">${isWallpaper ? '<span>DESKTOP CONTROLS</span><p>拖动阵列或点击界面按钮浏览节目。桌面模式下，方向键与滚轮可能无法传入壁纸。</p>' : '<span>KEYBOARD CONTROLS</span><p><kbd>←</kbd><kbd>→</kbd> 切栏 <kbd>↑</kbd><kbd>↓</kbd> 选期 <kbd>ENTER</kbd> 播放 <kbd>/</kbd> 检索 <kbd>ESC</kbd> 返回</p>'}</div><div class="settings-bottom">${!isWallpaper && document.fullscreenEnabled ? '<button data-action="fullscreen">FULLSCREEN <span>↗</span></button>' : ''}<button data-action="restart">REINITIALIZE SYSTEM <span>↻</span></button></div><div class="modal-bottom"><span>GLORIOUS REVOLUTION PODCAST / 1.0 · 使用 MiSans 字体（小米） <a href="${assetUrl("fonts/MiSans-license.pdf")}" target="_blank" rel="noopener">字体许可</a></span><span>POWERED BY 光辉革命播客</span></div>`;
+  return `<h2>播客设置<small>终端偏好设置</small></h2><p class="settings-intro">光辉革命播客 <span>·</span> 全世界无产者，联合起来</p>${isWallpaper ? '<p class="wallpaper-settings-note">每次启动都会读取 Wallpaper Engine 中的设置。在此修改仅对当前运行生效，无法持久保存；如需保留，请在 Wallpaper Engine 的壁纸属性中调整。</p>' : ""}<div class="settings-list">${themeSettingsMarkup(prefs.colorTheme === "dark")}${!isWallpaper ? `<label><div><strong>性能模式</strong><span>降低三维画质和渲染分辨率，保留完整动效；关闭后恢复原画质</span></div><input type="checkbox" data-pref="superPerformance" ${prefs.superPerformance ? "checked" : ""}/><i class="toggle"></i></label>` : ""}${workbench?.settingsMarkup() ?? ""}${audioSettingsMarkup(prefs)}<label><div><strong>减少动态效果</strong><span>跳过开机动画，简化选档、镜头和文字动效</span></div><input type="checkbox" data-pref="reduced" ${prefs.reduced ? "checked" : ""}/><i class="toggle"></i></label></div>${motionSettingsMarkup()}${qualityMarkup(prefs.rendering)}${pwaSettingsMarkup()}<div class="settings-shortcuts">${isWallpaper ? '<span>DESKTOP CONTROLS</span><p>拖动阵列或点击界面按钮浏览节目。桌面模式下，方向键与滚轮可能无法传入壁纸。</p>' : '<span>操作说明</span><p><kbd>←</kbd><kbd>→</kbd> 切栏 <kbd>↑</kbd><kbd>↓</kbd> 选期 <kbd>ENTER</kbd> 播放 <kbd>/</kbd> 检索 <kbd>ESC</kbd> 返回</p>'}</div><div class="settings-bottom">${!isWallpaper && document.fullscreenEnabled ? '<button data-action="fullscreen">全屏 <span>↗</span></button>' : ''}<button data-action="restart">重新开始 <span>↻</span></button></div><div class="modal-bottom"><span>GLORIOUS REVOLUTION PODCAST / 1.0 · 使用 MiSans 字体（小米） <a href="${assetUrl("fonts/MiSans-license.pdf")}" target="_blank" rel="noopener">字体许可</a></span><span>由 光辉革命播客 制作</span></div>`;
 }
 
 document.addEventListener("input", (e) => {
@@ -1101,10 +1108,10 @@ async function start() {
       loadBootWebfonts(),
       // With unicode-range faces, preload the opening's actual characters,
       // not every font shard. Other archive text loads on demand.
-      document.fonts.load("300 20px MiSans", "ACCESS WELCOME TO INTERNAL DATABASE"),
-      document.fonts.load("400 20px MiSans", "身份信息确认请求已接收开始处理权限验证通过欢迎访问光辉革命播客内部资料期号时长栏目选择节目：0123456789 REDMOLISHA"),
+      document.fonts.load("300 20px MiSans", "正在载入节目正在准备音频开始播放身份确认行为"),
+      document.fonts.load("400 20px MiSans", "身份信息确认请求已接收开始播放权限验证通过欢迎访问光辉革命播客内部资料期号时长栏目选择节目：0123456789 光辉革命播客"),
       document.fonts.load("600 20px MiSans", "光辉革命 马列毛主义播客 PODCAST 让价值文章有声化"),
-      document.fonts.load("700 20px MiSans", "GLORIOUS REVOLUTION PODCAST WELCOME TO"),
+      document.fonts.load("700 20px MiSans", "GLORIOUS REVOLUTION PODCAST 欢迎来到"),
     ]);
     if (scene) bindScene(scene);
     savePrefs();
@@ -1121,7 +1128,7 @@ async function start() {
   } catch (error) {
     console.error(error);
     $("#loading").innerHTML =
-      '<div class="error-state"><strong>CONNECTION INTERRUPTED</strong><p>三维模型资源未能载入。请确认浏览器已启用硬件加速，然后重新连接。</p><button onclick="location.reload()">RECONNECT →</button></div>';
+      '<div class="error-state"><strong>连接中断</strong><p>三维模型资源未能载入。请确认浏览器已启用硬件加速，然后重新连接。</p><button onclick="location.reload()">RECONNECT →</button></div>';
   }
 }
 function completeStartup(silent: boolean) {

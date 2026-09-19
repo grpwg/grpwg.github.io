@@ -17,7 +17,7 @@ const typed = (text: string, f: number, start: number, end: number) =>
         ),
   );
 const at = (f: number, frames: number[]) => frames.includes(f);
-const POWERED = "POWERED BY 光辉革命播客";
+const POWERED = "由 光辉革命播客 制作";
 const accessCounts = [
   1, 1, 3, 4, 5, 6, 9, 11, 12, 14, 17, 18, 19, 20, 22, 23, 25, 26,
 ];
@@ -37,11 +37,11 @@ export function bootMotion(appTime: number) {
             : "welcome";
   let auth = "";
   if (f < 363) {
-    auth = typed("ID CONFIRMED", f, 282, 295);
-    if (f >= 320) auth += " : " + typed("REDMOLISHA", f, 321, 339);
-  } else if (f < 421) auth = typed("REQUEST RECEIVED", f, 367, 389);
+    auth = typed("节目已上线", f, 282, 295);
+    if (f >= 320) auth += " : " + typed("光辉革命播客", f, 321, 339);
+  } else if (f < 421) auth = typed("正在准备音频", f, 367, 389);
   else {
-    auth = typed("START PROCESSING", f, 423, 440);
+    auth = typed("开始播放", f, 423, 440);
     if (f >= 449)
       auth += ".".repeat(Math.min(3, 1 + Math.floor((f - 449) / 4)));
     if (at(f, [479, 485, 486])) auth = "              SING...";
@@ -58,7 +58,7 @@ export function bootMotion(appTime: number) {
     f,
     step,
     auth,
-    access: "ACCESS PERMISSION REQUIRED".slice(
+    access: "正在载入节目".slice(
       0,
       f < 170 ? 0 : accessCounts[Math.min(17, f - 170)],
     ),

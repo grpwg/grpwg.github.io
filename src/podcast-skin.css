@@ -184,12 +184,11 @@
   margin-top: 18px;
   gap: 14px;
 }
-.player-toggle {
-  width: 40px;
-  height: 40px;
+px;
+  height: 44px;
   border-color: var(--theme-accent, #c2192a);
   background: var(--theme-accent, #c2192a);
-  color: var(--theme-panel, #ffffff);
+  color: #ffffff;
 }
 .player-toggle:hover,
 .episode-player.is-playing .player-toggle {
@@ -498,3 +497,326 @@
 }
 
 
+
+/* ================= Portrait: phone home =================
+   Header, 3D stage, flat episode block, player bar, episode stepper.
+   The scene keeps the top half; everything below is information. */
+[data-layout="portrait"] .archive-callout {
+  left: var(--edge);
+  right: var(--edge);
+  top: 52%;
+  width: auto;
+  padding: 0;
+  background: none;
+  border: 0;
+  box-shadow: none;
+}
+[data-layout="portrait"] .archive-callout .callout-label {
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--theme-line, #bdb8ad);
+  font-size: 11px;
+  letter-spacing: 2.4px;
+}
+[data-layout="portrait"] .archive-callout .callout-label i {
+  width: 9px;
+  height: 9px;
+}
+[data-layout="portrait"] .archive-callout .file-title {
+  margin: 14px 0 0;
+  font-size: 28px;
+  line-height: 1.34;
+}
+[data-layout="portrait"] .callout-summary {
+  margin-top: 10px;
+  font-size: 13px;
+  line-height: 1.62;
+  -webkit-line-clamp: 2;
+}
+[data-layout="portrait"] .callout-foot {
+  margin-top: 12px;
+}
+[data-layout="portrait"] .callout-foot .read-file {
+  display: none;
+}
+[data-layout="portrait"] .callout-duration {
+  font-size: 12px;
+}
+[data-layout="portrait"] .column-navigation {
+  display: none;
+}
+[data-layout="portrait"] .episode-player {
+  left: var(--edge);
+  right: var(--edge);
+  top: auto;
+  bottom: 72px;
+  width: auto;
+  max-width: none;
+  padding: 12px 0 0;
+  border-top: 1px solid var(--theme-line, #bdb8ad);
+}
+[data-layout="portrait"] .episode-player .player-cover,
+[data-layout="portrait"] .episode-player .player-kicker,
+[data-layout="portrait"] .episode-player .player-title,
+[data-layout="portrait"] .episode-player .player-subtitle {
+  display: none;
+}
+[data-layout="portrait"] .episode-player .player-controls {
+  margin-top: 0;
+}
+[data-layout="portrait"] .archive-navigation {
+  left: var(--edge);
+  right: var(--edge);
+  bottom: 22px;
+  transform: none;
+  justify-content: space-between;
+  gap: 0;
+}
+[data-layout="portrait"] .archive-navigation #file-ticks {
+  display: none;
+}
+[data-layout="portrait"] .archive-navigation button {
+  width: auto;
+  height: auto;
+  font-size: 0;
+}
+[data-layout="portrait"] .archive-navigation button::after {
+  font-size: 13px;
+  letter-spacing: 0.5px;
+  color: var(--theme-ink, #17171a);
+}
+[data-layout="portrait"] .archive-navigation button:hover::after {
+  color: var(--theme-accent, #c2192a);
+}
+[data-layout="portrait"] .archive-navigation [data-action="prev"]::after {
+  content: "← 上一期";
+}
+[data-layout="portrait"] .archive-navigation [data-action="next"]::after {
+  content: "下一期 →";
+}
+[data-layout="portrait"] .archive-counter {
+  left: 50%;
+  bottom: 20px;
+  transform: translateX(-50%);
+}
+[data-layout="portrait"] .archive-counter .tiny-label {
+  display: none;
+}
+[data-layout="portrait"] .archive-counter > div {
+  margin: 0;
+  font-size: 20px;
+  gap: 7px;
+}
+
+/* Portrait fixes: the title wraps instead of clipping, and the footer steps
+   aside for the episode stepper. */
+[data-layout="portrait"] .archive-callout .file-title {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+[data-layout="portrait"] .system-footer {
+  display: none;
+}
+
+/* The play control stays a solid accent disc with a white glyph in both themes;
+   player.css only outlined it, so the icon vanished on dark surfaces. */
+.player-toggle {
+  width: 44px;
+  height: 44px;
+  background: var(--theme-accent, #c2192a);
+  border: 1px solid var(--theme-accent, #c2192a);
+  color: #ffffff;
+}
+.player-toggle:hover,
+.episode-player.is-playing .player-toggle {
+  background: var(--theme-ink, #17171a);
+  border-color: var(--theme-ink, #17171a);
+  color: var(--theme-panel, #ffffff);
+}
+
+/* Bookmark and download actions follow the surface in both themes. */
+.solid-button,
+.download-button {
+  background: var(--theme-panel, #ffffff);
+  color: var(--theme-ink, #17171a);
+}
+.solid-button {
+  border: 1px solid var(--theme-accent, #c2192a);
+  color: var(--theme-accent, #c2192a);
+}
+.solid-button > span {
+  color: var(--theme-accent, #c2192a);
+}
+.solid-button:hover,
+.download-button:hover {
+  background: var(--theme-field, #efece6);
+}
+.download-button {
+  border: 1px solid var(--theme-line, #c8c1b6);
+}
+
+/* "播放本期" belongs to the phone home; the episode page already carries the
+   full player bar, so it only shows there as a compact action. */
+[data-layout="portrait"] .callout-foot .read-file {
+  display: flex;
+}
+[data-layout="portrait"] .callout-foot {
+  align-items: center;
+  gap: 14px;
+}
+
+/* Compact variant of the home play CTA on phones. */
+[data-layout="portrait"] .callout-foot .read-file {
+  padding: 11px 18px;
+  gap: 9px;
+  font-size: 14px;
+}
+[data-layout="portrait"] .callout-foot .play-glyph {
+  font-size: 11px;
+}
+
+/* theme.css repaints `.solid-button` with the ink colour on dark surfaces, so
+   the action row restates its own surface with matching specificity. */
+.detail-actions .solid-button,
+.detail-actions .download-button {
+  background: var(--theme-panel, #ffffff);
+  color: var(--theme-ink, #17171a);
+}
+.detail-actions .solid-button {
+  border: 1px solid var(--theme-accent, #c2192a);
+  color: var(--theme-accent, #c2192a);
+}
+.detail-actions .solid-button > span {
+  color: inherit;
+}
+.detail-actions .download-button {
+  border: 1px solid var(--theme-line, #c8c1b6);
+}
+.detail-actions .solid-button:hover,
+.detail-actions .download-button:hover {
+  background: var(--theme-field, #efece6);
+}
+
+/* theme.css loads after this file, so the action row outranks it explicitly. */
+.detail-content .detail-actions .solid-button,
+.detail-content .detail-actions .download-button {
+  background: var(--theme-panel, #ffffff);
+  color: var(--theme-ink, #17171a);
+}
+.detail-content .detail-actions .solid-button {
+  border: 1px solid var(--theme-accent, #c2192a);
+  color: var(--theme-accent, #c2192a);
+}
+.detail-content .detail-actions .solid-button > span {
+  color: inherit;
+}
+.detail-content .detail-actions .download-button {
+  border: 1px solid var(--theme-line, #c8c1b6);
+}
+.detail-content .detail-actions .solid-button:hover,
+.detail-content .detail-actions .download-button:hover {
+  background: var(--theme-field, #efece6);
+}
+
+/* The rolling-text library keeps the title on one line; on phones the episode
+   name has to wrap, so the wrap is forced on the library's own nodes. */
+[data-layout="portrait"] .archive-callout .file-title,
+[data-layout="portrait"] .archive-callout .file-title :is(.rn-root, .rn-value, span) {
+  white-space: normal !important;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+/* The library also pins a measured width on its root, which keeps the single
+   line intact regardless of white-space. Release the box on phones. */
+[data-layout="portrait"] .archive-callout .file-title :is(.rn-root, .rn-value) {
+  width: auto !important;
+  max-width: 100% !important;
+  height: auto !important;
+  display: block !important;
+  overflow: visible !important;
+}
+
+/* Phones: the rolling-text nodes position glyphs individually and cannot
+   reflow, so the episode name stays on one line and truncates instead. */
+[data-layout="portrait"] .archive-callout .file-title,
+[data-layout="portrait"] .archive-callout .file-title :is(.rn-root, .rn-value) {
+  display: block !important;
+  width: auto !important;
+  max-width: 100% !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis;
+}
+
+/* Phones render the episode name as plain text so it can wrap; the rolling
+   nodes stay unused there. */
+#selected-title-plain {
+  display: none;
+}
+[data-layout="portrait"] #selected-title {
+  display: none;
+}
+[data-layout="portrait"] #selected-title-plain {
+  display: block;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+/* The library writes an inline display on its root, so the phone hide needs to
+   outrank it: phones use the plain wrapping title only. */
+[data-layout="portrait"] #selected-title {
+  display: none !important;
+}
+
+/* ---- Portrait episode page ----
+   One summary only (the 简介 tab already carries it), the player docks above the
+   stepper, and the stepper is centred instead of using the desktop offset. */
+[data-layout="portrait"] .detail-lead {
+  display: none;
+}
+[data-layout="portrait"] .episode-player {
+  left: var(--edge);
+  right: var(--edge);
+  top: auto;
+  bottom: 74px;
+  width: auto;
+  max-width: none;
+}
+[data-layout="portrait"] .detail-content {
+  top: 50%;
+  bottom: 168px;
+  max-height: none;
+}
+[data-layout="portrait"] .detail-nav {
+  left: 50%;
+  bottom: 20px;
+}
+
+/* Phone stepper: full width with the labels pinned to the edges, and the
+   labels must not wrap inside their buttons. */
+[data-layout="portrait"] .detail-nav {
+  left: var(--edge);
+  right: var(--edge);
+  bottom: 20px;
+  transform: none;
+  justify-content: space-between;
+  gap: 0;
+}
+[data-layout="portrait"] .detail-nav > button {
+  flex: 0 0 auto;
+  white-space: nowrap;
+  font-size: 13px;
+  letter-spacing: 0.5px;
+}
+[data-layout="portrait"] .detail-ticks {
+  flex: 1 1 auto;
+  justify-content: center;
+  gap: 5px;
+  padding: 0 8px;
+  overflow: hidden;
+}
+[data-layout="portrait"] .detail-ticks button {
+  flex: 0 0 auto;
+  width: 2px;
+  height: 12px;
+}

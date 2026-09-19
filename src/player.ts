@@ -48,7 +48,7 @@ export class EpisodePlayer {
     this.root.innerHTML = `
       <div class="player-cover"><img alt="" /></div>
       <div class="player-body">
-        <div class="player-meta"><span class="player-kicker">NOW PLAYING</span><strong class="player-title"></strong><span class="player-subtitle"></span></div>
+        <div class="player-meta"><span class="player-kicker">正在播放</span><strong class="player-title"></strong><span class="player-subtitle"></span></div>
         <div class="player-controls">
           <button class="player-toggle" type="button" aria-label="播放或暂停"><span class="player-glyph">▶</span></button>
           <span class="player-elapsed">00:00</span>

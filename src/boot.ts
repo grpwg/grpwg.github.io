@@ -91,9 +91,9 @@ export class BootSequence {
       "identity", "request", "processing", "processingGlitch",
     ]);
     for (const [selector, key, text] of [
-      [".scan > span", "permission", "PERMISSION AUTHORIZED"],
-      [".welcome-heading", "welcome", "WELCOME TO"],
-      [".welcome-database", "database", "INTERNAL DATABASE"],
+      [".scan > span", "permission", "音频已就绪"],
+      [".welcome-heading", "welcome", "欢迎来到"],
+      [".welcome-database", "database", "让价值文章有声化"],
     ] as const) new BootLettering(this.el(selector), [key]).setText(text);
     this.companyInk.forEach((el) =>
       new BootLettering(el.querySelector("span")!, ["company"]).setText("光辉革命播客"),
