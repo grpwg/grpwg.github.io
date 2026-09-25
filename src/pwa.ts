@@ -39,7 +39,9 @@ export function pwaSettingsMarkup() {
     : installPrompt ? "安装后可在独立窗口中打开节目。"
     : installlessFirefox() ? "本浏览器不提供一键安装；离线资源已就绪，收藏本站即可离线浏览。"
     : "可通过浏览器菜单安装或添加到主屏幕。";
-  return `<section id="pwa-settings" class="pwa-settings" aria-label="主屏幕与离线使用"><h3>APP / 主屏幕与离线</h3><p>${guidance}</p><p class="pwa-status" role="status">${status}</p><div class="pwa-actions">${installPrompt && !installed() ? '<button data-pwa-action="install">安装到设备 ↗</button>' : ""}${registration?.waiting ? '<span>新版本已准备好</span><button data-pwa-action="update">更新并重启 ↻</button>' : ""}${failed ? '<button data-pwa-action="retry">重试保存离线资源 ↻</button>' : ""}${canCheck ? '<button data-pwa-action="check">检查更新 ↻</button>' : ""}</div></section>`;
+  // 按钮之间留出 8px 间距，避免视觉覆盖
+  const btnStyle = 'style="display:inline-block;margin-left:8px;margin-right:4px;"';
+  return `<section id="pwa-settings" class="pwa-settings" aria-label="主屏幕与离线使用"><h3>APP / 主屏幕与离线</h3><p>${guidance}</p><p class="pwa-status" role="status">${status}</p><div class="pwa-actions">${installPrompt && !installed() ? `<button ${btnStyle} data-pwa-action="install">安装到设备 ↗</button>` : ""}${registration?.waiting ? '<span>新版本已准备好</span><button ${btnStyle} data-pwa-action="update">更新并重启 ↻</button>' : ""}${failed ? `<button ${btnStyle} data-pwa-action="retry">重试保存离线资源 ↻</button>` : ""}${canCheck ? `<button ${btnStyle} data-pwa-action="check">检查更新 ↻</button>` : ""}</div></section>`;
 }
 function refresh() {
   const current = document.querySelector("#pwa-settings");
@@ -111,7 +113,7 @@ document.addEventListener("click", async event => {
     } else { started = false; void initPwa(tell); }
   }
   if (button.dataset.pwaAction === "check" && registration) {
-    try { await registration.update(); tell("已检查更新"); } catch { tell("检查失败"); }
+    try { await registration.update(); tell && tell("已检查更新"); } catch { tell && tell("检查失败"); }
     refresh();
   }
 });
