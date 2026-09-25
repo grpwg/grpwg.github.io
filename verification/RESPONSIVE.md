@@ -61,3 +61,10 @@
 修复（仅作用于 `[data-layout="opening"][data-opening-portrait="true"]`，桌面与影厅版不受影响）：`.powered` 46px；`#inspection-text` 改为右对齐块（`right:90px; width:660px; top:462px`，44px），其 `strong` 56px。
 
 实机换算：手机 360×640／390×844／430×932 上标注 12.4／13.4／14.8px、加粗行 15.8／17.1／18.8px、POWERED 12.9／14／15.5px，均单行且距右缘 25–30px 不裁切；平板 768×1024／834×1194 上为 26.4／28.7px 与 33.6／36.5px。
+
+### 竖屏 POWERED BY 行盒与揭示长度（2026-09-25）
+
+用户指出竖屏开场左下 POWERED BY 显示异常。两处原因：
+
+1. 上一条把 `.powered` 字号放到 46px（舞台本地坐标），但 `line-height` 仍是 19px 档的 24px：行盒远小于字形，放大后的字溢出被屏幕下缘切掉。改为 `line-height: 1.15`（52.9px）并把底距提到 `bottom: 72px`（该规则放在 `[data-mobile-boot]` 规则之后，同级特异性下后者生效），同步放大 `.powered i` 色条为 42×10。实测 800×867 视口：字 46px、行盒 52.9px、盒高 53px、盒底距舞台下缘 45 屏幕 px，不再裁切。
+2. `boot-motion.ts` 的 `POWERED` 常量（揭示进度用）是「由 光辉革命播客 制作」11 字，而 `.powered` 实际 DOM 是「POWERED BY 光辉革命播客」17 字，揭示比例对不上导致中途截断观感。常量改为与实际文案一致（该常量只用于揭示长度，不写入 DOM）。

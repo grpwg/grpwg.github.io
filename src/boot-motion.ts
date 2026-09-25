@@ -17,7 +17,7 @@ const typed = (text: string, f: number, start: number, end: number) =>
         ),
   );
 const at = (f: number, frames: number[]) => frames.includes(f);
-const POWERED = "由 光辉革命播客 制作";
+const POWERED = "POWERED BY 光辉革命播客";
 const accessCounts = [
   1, 1, 3, 4, 5, 6, 9, 11, 12, 14, 17, 18, 19, 20, 22, 23, 25, 26,
 ];
