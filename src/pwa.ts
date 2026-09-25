@@ -30,12 +30,16 @@ export function pwaSettingsMarkup() {
     : failed ? "离线副本未能保存，可联网后重试。"
     : ready ? "离线资源已就绪，可离线浏览节目与模型。"
     : "正在准备离线资源，首次需要保持联网。";
+  // A manual check is the only reliable way to see a new version on mobile:
+  // the automatic check only runs on visibilitychange and only after an hour,
+  // so a freshly pushed release can sit unnoticed until the tab is reopened.
+  const canCheck = Boolean(registration && !registration.waiting && !failed);
   const guidance = installed() ? "已从主屏幕打开。"
     : ios() ? "在 Safari 中轻点“分享”→“添加到主屏幕”，然后从主屏幕图标打开。"
     : installPrompt ? "安装后可在独立窗口中打开节目。"
     : installlessFirefox() ? "本浏览器不提供一键安装；离线资源已就绪，收藏本站即可离线浏览。"
     : "可通过浏览器菜单安装或添加到主屏幕。";
-  return `<section id="pwa-settings" class="pwa-settings" aria-label="主屏幕与离线使用"><h3>APP / 主屏幕与离线</h3><p>${guidance}</p><p class="pwa-status" role="status">${status}</p><div class="pwa-actions">${installPrompt && !installed() ? '<button data-pwa-action="install">安装到设备 ↗</button>' : ""}${registration?.waiting ? '<span>新版本已准备好</span><button data-pwa-action="update">更新并重启 ↻</button>' : ""}${failed ? '<button data-pwa-action="retry">重试保存离线资源 ↻</button>' : ""}</div></section>`;
+  return `<section id="pwa-settings" class="pwa-settings" aria-label="主屏幕与离线使用"><h3>APP / 主屏幕与离线</h3><p>${guidance}</p><p class="pwa-status" role="status">${status}</p><div class="pwa-actions">${installPrompt && !installed() ? '<button data-pwa-action="install">安装到设备 ↗</button>' : ""}${registration?.waiting ? '<span>新版本已准备好</span><button data-pwa-action="update">更新并重启 ↻</button>' : ""}${failed ? '<button data-pwa-action="retry">重试保存离线资源 ↻</button>' : ""}${canCheck ? '<button data-pwa-action="check">检查更新 ↻</button>' : ""}</div></section>`;
 }
 function refresh() {
   const current = document.querySelector("#pwa-settings");
@@ -105,5 +109,9 @@ document.addEventListener("click", async event => {
     if (registration) {
       try { await registration.update(); } catch { failed = true; refresh(); }
     } else { started = false; void initPwa(tell); }
+  }
+  if (button.dataset.pwaAction === "check" && registration) {
+    try { await registration.update(); tell("已检查更新"); } catch { tell("检查失败"); }
+    refresh();
   }
 });
