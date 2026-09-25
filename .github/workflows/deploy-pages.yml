@@ -27,8 +27,9 @@ jobs:
       - name: Build
         run: npm run build
         env:
-          # Project sites are served from /<repo>/. Use "/" for a custom root domain.
-          BASE_PATH: /${{ github.event.repository.name }}/
+          # User sites (<owner>.github.io) and custom root domains serve from "/";
+          # project sites are served from /<repo>/.
+          BASE_PATH: ${{ github.event.repository.name == format('{0}.github.io', github.repository_owner) && '/' || format('/{0}/', github.event.repository.name) }}
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
