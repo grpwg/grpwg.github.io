@@ -8,7 +8,7 @@ export type DragProjection = Record<DragAxis, { x: number; y: number }>;
  * otherwise cross per second. Both tracks scale together so the glide keeps
  * the released screen direction.
  */
-export const MAX_SLIDE_SPEED = 18;
+export const MAX_SLIDE_SPEED = 17;
 
 /** Invert the camera's two projected tracks so the plane follows any pointer path. */
 export class ArchiveDrag {
