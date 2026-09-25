@@ -9,6 +9,10 @@ export interface PlayerTrack {
 }
 
 const RATES = [0.75, 1, 1.25, 1.5, 2];
+// The list stays ascending for the eye, but a <select> without a marked option
+// falls back to its first entry — which used to start every new visitor at
+// 0.75×. Playback is normal speed unless the viewer picked a rate themselves.
+const DEFAULT_RATE = 1;
 
 const clock = (seconds: number) => {
   if (!Number.isFinite(seconds) || seconds < 0) return "00:00";
@@ -54,7 +58,7 @@ export class EpisodePlayer {
           <span class="player-elapsed">00:00</span>
           <input class="player-seek" type="range" min="0" max="1000" value="0" step="1" aria-label="播放进度" />
           <span class="player-total">00:00</span>
-          <select class="player-rate" aria-label="播放速度">${RATES.map((value) => `<option value="${value}">${value}×</option>`).join("")}</select>
+          <select class="player-rate" aria-label="播放速度">${RATES.map((value) => `<option value="${value}"${value === DEFAULT_RATE ? " selected" : ""}>${value}×</option>`).join("")}</select>
         </div>
       </div>`;
     host.appendChild(this.root);
