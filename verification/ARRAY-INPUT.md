@@ -55,3 +55,8 @@
 用户反馈详情页按「下一期」后画面停在磨砂、不再解密。根因：`DecryptionController.select()` 内部调用 `leave()` 把 `active` 置为 false，而只有 `scene.setMode("detail")` 会 `enter()` 重新启动；详情页内换集走 `openEpisode → scene.select()`，只停不启 → 永远停在 `phase: waiting`、`clarity: 0`（实测 `extraction 4.05`、`cameraDetail 1` 条件已满足）。
 
 修复：新增 `scene.restartDetailDecryption()`（`targetDetail` 时调用 `decryption.enter(false)`），由 `openEpisode` 在 `select()` 之后调用，使新选档案重新从磨砂解密。实测详情页连续两次「下一期」，每次 `clarity` 均回到 `1`、`phase: clear`；详情页刻度为整目录 11 个。
+
+### 有界刻度与最新一期默认（2026-09-25）
+
+- **刻度有界**：刻度条不再"一期一个刻度"（期数增长会让导航条无限变宽、并撞上固定百分比的栏目导航，实测 1376×1032 撞 54px、1194×834 撞 22px）。改为固定最多 7 个刻度的**滑动窗口**（`TICK_WINDOW`／`tickWindow()`），当前期尽量居中，窗口随位置滑动；期数到 100 也不会改变条宽。实测 1920／1600／1376／1366／1194／1024／390 全部 `nav×col` 重叠为 0，阵列与详情页刻度均为 7 个。
+- **默认打开最新一期**：目录按期号升序，`latestIndex = globalFiles.at(-1)`，`start()` 与重播后的默认选中都改为最新一期（当前 EP-10，计数 `11 / 11`、位于第 5 栏）。

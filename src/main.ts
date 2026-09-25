@@ -239,6 +239,24 @@ const globalFiles = records
   .map((record, index) => ({ number: record.number, index }))
   .sort((a, b) => a.number - b.number || a.index - b.index)
   .map(({ index }) => index);
+/**
+ * Tick strips show a bounded sliding window around the selection, never one
+ * tick per episode: the archive keeps growing, and an unbounded strip widened
+ * the navigation until it collided with the column bar. Seven keeps the
+ * active tick centred with three neighbours on each side.
+ */
+const TICK_WINDOW = 7;
+/** The app opens on the newest episode; the catalogue is number-ascending. */
+const latestIndex = globalFiles.length ? globalFiles[globalFiles.length - 1] : 0;
+selected = latestIndex;
+function tickWindow(position: number) {
+  const total = globalFiles.length;
+  const size = Math.min(TICK_WINDOW, total);
+  const start = total > size
+    ? Math.max(0, Math.min(position - Math.floor(size / 2), total - size))
+    : 0;
+  return { start, size, total };
+}
 function recordAccess() {
   accessLog.unshift({
     id: records[selected].id,
@@ -276,6 +294,7 @@ function savePrefs() {
   $("#stage").classList.toggle("reduce-motion", prefs.reduced);
 }
 let previousLayout = "";
+let titleFitKey = "";
 function fit() {
   const stage = $("#stage");
   const viewport = $("#viewport");
@@ -309,6 +328,7 @@ function fit() {
     scene?.resize();
   }
   updateQualitySummary();
+  fitSelectionTitle(records[selected].title);
   // Re-measure line covers and tab underline after wrapping changes.
   requestAnimationFrame(() => {
     documentDecryption.refresh();
@@ -322,11 +342,11 @@ window.visualViewport?.addEventListener("resize", fit);
 window.visualViewport?.addEventListener("scroll", fit);
 matchMedia("(pointer: coarse)").addEventListener("change", fit);
 fit();
-// One tick per episode of the whole catalogue, matching the global
-// previous/next order (columns in order, files inside each).
-$("#file-ticks").innerHTML = globalFiles
-  .map((index) => `<button data-select="${index}"></button>`)
-  .join("");
+// A bounded strip: the window below maps its ticks onto the catalogue.
+$("#file-ticks").innerHTML = Array.from(
+  { length: Math.min(TICK_WINDOW, globalFiles.length) },
+  () => `<button data-select=""></button>`,
+).join("");
 const fileTicks = [...$("#file-ticks").querySelectorAll<HTMLButtonElement>("button")];
 
 function setMode(next: Mode) {
@@ -456,6 +476,26 @@ function stepColumn(direction: number) {
   const next = wrap(lane + direction, archiveColumns.length);
   select(columnMemory[next], { axis: "lane", direction });
 }
+/**
+ * Scale the rolling episode title to the callout width. The rolling library
+ * renders one fixed-width slot per character (white-space: pre) and cannot
+ * wrap, so a long title or a narrow tablet/laptop card used to overflow the
+ * callout and get cut by the window edge. Cached per (title, width) so a fast
+ * slide does not measure layout every frame.
+ */
+function fitSelectionTitle(text: string) {
+  const host = document.querySelector<HTMLElement>(".file-title");
+  const rolling = document.querySelector<HTMLElement>("#selected-title");
+  if (!host || !rolling || rolling.offsetParent === null) return;
+  const key = `${text}@${host.clientWidth}`;
+  if (key === titleFitKey) return;
+  titleFitKey = key;
+  rolling.style.setProperty("--title-fit", "1");
+  const needed = rolling.scrollWidth;
+  const available = host.clientWidth;
+  const scale = needed > 0 && available > 0 ? Math.min(1, available / needed) : 1;
+  rolling.style.setProperty("--title-fit", String(Math.max(0.3, scale)));
+}
 function updateSelection(navigation?: ArchiveNavigation) {
   const r = records[selected];
   const { lane } = fileLocation(selected);
@@ -463,6 +503,7 @@ function updateSelection(navigation?: ArchiveNavigation) {
   selectionTitle.update({ text: r.title, animated: !prefs.reduced && mode === "archive" });
   // Phones render the name as plain text: the rolling nodes cannot reflow.
   $("#selected-title-plain").textContent = r.title;
+  fitSelectionTitle(r.title);
   clearanceTitle.update({ text: r.duration, animated: !prefs.reduced && mode === "archive" });
   categoryTitle.update({ text: r.column, animated: !prefs.reduced && mode === "archive" });
   $("#callout-summary").textContent = r.summary.replace(/\s+/g, " ").slice(0, 180);
@@ -481,8 +522,9 @@ function updateSelection(navigation?: ArchiveNavigation) {
   // written straight to the DOM instead of rolled.
   $("#selected-code").textContent = String(r.number).padStart(2, "0");
   selectedCode.finish();
+  const cataloguePosition = Math.max(0, globalFiles.indexOf(selected));
   fileCounter.update({
-    value: globalFiles.indexOf(selected) + 1,
+    value: cataloguePosition + 1,
     animated: !prefs.reduced && mode === "archive",
     direction:
       navigation && "axis" in navigation ? direction : "auto",
@@ -499,8 +541,10 @@ function updateSelection(navigation?: ArchiveNavigation) {
   columnTitle.update({ text: archiveColumns[lane], animated: !prefs.reduced && mode === "archive" });
   $<HTMLButtonElement>('[data-action="column-prev"]').disabled = false;
   $<HTMLButtonElement>('[data-action="column-next"]').disabled = false;
+  const window = tickWindow(cataloguePosition);
   fileTicks.forEach((button, slot) => {
-    const index = globalFiles[slot];
+    const offset = window.start + slot;
+    const index = offset < window.total ? globalFiles[offset] : undefined;
     const record = index === undefined ? undefined : records[index];
     // Guards a mid-build catalogue shorter than the strip.
     if (!record) {
@@ -514,8 +558,9 @@ function updateSelection(navigation?: ArchiveNavigation) {
     button.dataset.select = String(index);
     button.setAttribute("aria-label", `选择 ${record.id} ${record.title}`);
     button.title = `${record.id} · ${record.title}`;
-    button.classList.toggle("selected", index === selected);
-    button.setAttribute("aria-pressed", String(index === selected));
+    const active = offset === cataloguePosition;
+    button.classList.toggle("selected", active);
+    button.setAttribute("aria-pressed", String(active));
   });
   $("#saved-count").textContent = String(saved.size).padStart(2, "0");
 }
@@ -529,8 +574,8 @@ function replayBootAfterModal(forcePreview: boolean) {
   lastStep = "";
   setMode(prefs.reduced && !forcePreview ? "archive" : "boot");
   audio.restartBoot();
-  scene?.select(0);
-  selected = 0;
+  scene?.select(latestIndex);
+  selected = latestIndex;
   pendingPresent = null;
   updateSelection();
   if (!forcePreview) audio.play("ui-tick");
@@ -577,7 +622,8 @@ function renderDetail() {
   <div class="detail-actions"><button class="solid-button" data-action="bookmark"><span class="bookmark-glyph">▣</span><span class="bookmark-label">${saved.has(r.id) ? "已收藏" : "收藏本期"}</span></button><a class="download-button" href="${escapeHtml(r.audio)}" target="_blank" rel="noopener"><span>⤓</span>下载音频</a></div>`;
   $("#detail-content").setAttribute("tabindex", "-1");
   $('[data-action="bookmark"]').setAttribute("aria-pressed", String(saved.has(r.id)));
-  const siblings = globalFiles;
+  const window = tickWindow(Math.max(0, globalFiles.indexOf(selected)));
+  const siblings = globalFiles.slice(window.start, window.start + window.size);
   $("#detail-ticks").innerHTML = siblings
     .map((index) => `<button data-action="episode-select" data-index="${index}" class="${index === selected ? "active" : ""}" aria-label="${records[index].id} ${escapeHtml(records[index].title)}"></button>`)
     .join("");
@@ -1119,7 +1165,7 @@ async function start() {
     if (scene) bindScene(scene);
     savePrefs();
     ready = true;
-    select(0);
+    select(latestIndex);
     if (entry) entry.ready();
     else completeStartup(false);
   } catch (error) {

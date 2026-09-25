@@ -65,6 +65,25 @@
   letter-spacing: -0.5px;
   text-align: left;
   color: var(--theme-ink, #17171a);
+  /* The rolling title renders one fixed-width slot per character and cannot
+     wrap: long titles (or narrow tablet/laptop cards) used to spill past the
+     callout and get cut by the window edge. The page scales it to the
+     available width; this clip is only a safety net. */
+  overflow: hidden;
+}
+.archive-callout .file-title:focus-visible {
+  outline-offset: -2px;
+}
+/* Compact cards keep the smaller title size the compact layout specifies; the
+   base 46px would wrap into three heavy lines once the title is allowed to
+   wrap. */
+[data-layout="compact"] .archive-callout .file-title {
+  font-size: 20px;
+  line-height: 1.35;
+}
+#selected-title {
+  transform: scale(var(--title-fit, 1));
+  transform-origin: left center;
 }
 .archive-callout .file-open {
   display: none;
@@ -747,23 +766,24 @@
   text-overflow: ellipsis;
 }
 
-/* Phones render the episode name as plain text so it can wrap; the rolling
-   nodes stay unused there. */
+/* Phones and compact cards render the episode name as plain text so it can
+   wrap; the rolling nodes measure their glyph slots once at the desktop 46px
+   font and cannot re-measure, so they cannot fit a narrow card. */
 #selected-title-plain {
   display: none;
 }
-[data-layout="portrait"] #selected-title {
+:is([data-layout="compact"], [data-layout="portrait"]) #selected-title {
   display: none;
 }
-[data-layout="portrait"] #selected-title-plain {
+:is([data-layout="compact"], [data-layout="portrait"]) #selected-title-plain {
   display: block;
   white-space: normal;
   overflow-wrap: anywhere;
 }
 
-/* The library writes an inline display on its root, so the phone hide needs to
-   outrank it: phones use the plain wrapping title only. */
-[data-layout="portrait"] #selected-title {
+/* The library writes an inline display on its root, so the hide needs to
+   outrank it: these layouts use the plain wrapping title only. */
+:is([data-layout="compact"], [data-layout="portrait"]) #selected-title {
   display: none !important;
 }
 

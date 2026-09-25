@@ -68,3 +68,10 @@
 
 1. 上一条把 `.powered` 字号放到 46px（舞台本地坐标），但 `line-height` 仍是 19px 档的 24px：行盒远小于字形，放大后的字溢出被屏幕下缘切掉。改为 `line-height: 1.15`（52.9px）并把底距提到 `bottom: 72px`（该规则放在 `[data-mobile-boot]` 规则之后，同级特异性下后者生效），同步放大 `.powered i` 色条为 42×10。实测 800×867 视口：字 46px、行盒 52.9px、盒高 53px、盒底距舞台下缘 45 屏幕 px，不再裁切。
 2. `boot-motion.ts` 的 `POWERED` 常量（揭示进度用）是「由 光辉革命播客 制作」11 字，而 `.powered` 实际 DOM 是「POWERED BY 光辉革命播客」17 字，揭示比例对不上导致中途截断观感。常量改为与实际文案一致（该常量只用于揭示长度，不写入 DOM）。
+
+### 卡片标题按可用宽度自适应（2026-09-25）
+
+平板上标题溢出卡片、被窗口右缘切掉。根因：滚动标题库按**初始化时的桌面字号（46px）**固定每字槽宽（`white-space: pre`，不换行），21 字标题固定约 956px；卡片在平板上只有约 575px（1376×1032）——1920 桌面遇到 21 字标题同样溢出。
+
+- 桌面档（`desktop`）：`fitSelectionTitle()` 量出未缩放宽度后对 `#selected-title` 施加 `transform: scale(var(--title-fit))`（缓存于"标题@可用宽"，滑动时不逐帧测量），并按可用宽缩放；`.file-title` 加 `overflow: hidden` 兜底，`:focus-visible` 用负 `outline-offset` 保留焦点环。实测 21 字标题在 1920／1376／1366／1194 溢出均为 0。
+- 紧凑与竖屏档（`compact`／`portrait`）：改用可换行的普通标题 `#selected-title-plain`（滚动件无法重测字宽、也放不下），紧凑档字号按紧凑布局回到 20px（两行 44px），竖屏维持 28px。
