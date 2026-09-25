@@ -17,7 +17,7 @@ export class StartupGate {
     root.setAttribute("role", "dialog");
     root.setAttribute("aria-modal", "true");
     root.setAttribute("aria-label", "进入光辉革命播客终端");
-    root.insertAdjacentHTML("beforeend", '<div class="entry-controls"><button class="entry-start" disabled>正在准备终端…</button><button class="entry-silent" hidden>关闭声音并进入</button><p class="entry-status" role="status">资源就绪后即可进入</p></div>');
+    root.insertAdjacentHTML("beforeend", '<div class="entry-controls"><button class="entry-start" disabled>正在准备终端…</button><button class="entry-silent" hidden>静音接入</button><p class="entry-status" role="status">资源就绪后开放接入</p></div>');
     this.button = root.querySelector<HTMLButtonElement>(".entry-start")!;
     this.silent = root.querySelector<HTMLButtonElement>(".entry-silent")!;
     this.status = root.querySelector<HTMLElement>(".entry-status")!;
@@ -59,7 +59,7 @@ export class StartupGate {
     // aria-disabled preserves keyboard focus while repeated input is ignored.
     this.button.setAttribute("aria-disabled", "true");
     this.button.textContent = "正在准备声音…";
-    this.status.textContent = "准备完成后开始播放";
+    this.status.textContent = "准备完成后开始广播";
     this.silent.hidden = false;
     let timer: ReturnType<typeof setTimeout> | undefined;
     try {

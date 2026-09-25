@@ -46,8 +46,8 @@ $("#stage").innerHTML = `
   <div id="boot-background" class="boot-background"><svg viewBox="0 0 1920 1080" preserveAspectRatio="none"><g fill="none" stroke="#fff" stroke-width="3"><path d="M-210 705C-45 705 182 704 247 567C337 377 99 306 4 435S27 680 169 631C309 584 227 314 279 111S568-113 568-113"/><path d="M1560-80C1374 114 1671 168 1601 323S1371 367 1431 480S1692 666 1559 787S1329 886 1498 1130"/><circle cx="1450" cy="648" r="346"/><circle cx="1450" cy="648" r="348"/></g></svg></div>
   <header class="brand">${brandHeading}</header>
   <nav class="system-nav" aria-label="系统导航">
-    <button data-action="search"><span class="nav-glyph">⌕</span> 往期节目 <span class="key">/</span></button>
-    <button data-action="saved" aria-label="查看收藏节目" title="收藏节目">＋ 收藏 <span id="saved-count">00</span></button>
+    <button data-action="search"><span class="nav-glyph">⌕</span> 往期档案 <span class="key">/</span></button>
+    <button data-action="saved" aria-label="查看已存档案" title="已存档案">＋ 收藏 <span id="saved-count">00</span></button>
     <button class="settings-button" data-action="settings" aria-label="系统设置" title="系统设置"><span class="settings-glyph" aria-hidden="true">◷</span><span class="settings-label">设置</span></button>
   </nav>
   <button id="skip" class="skip" data-action="skip">进入终端 <span>↗</span></button>
@@ -55,13 +55,13 @@ $("#stage").innerHTML = `
     <div class="access-text">节目</div>
     <div class="boot-logo">${logo}</div>
     <div class="auth-status"><span>▪</span> <span id="auth-message"></span><i></i></div>
-    <div class="scan"><svg viewBox="0 0 1920 1080" aria-hidden="true"><g fill="none" stroke="#080a08" stroke-width="2" stroke-linecap="round"><path/><path stroke="#fff"/><path/><path/><path/><path/><circle class="orbit-dot" r="8" fill="#ed821b" stroke="none"/><circle class="orbit-dot" r="8" fill="#ed821b" stroke="none"/><circle class="scan-core" cx="960" cy="540" r="5" fill="#080a08" stroke="none"/></g></svg><span>音频已就绪</span></div>
-    <div class="welcome"><div class="welcome-panel"></div><div class="welcome-heading">欢迎来到</div><div class="welcome-company"><strong>光辉革命播客</strong><strong class="welcome-highlight" aria-hidden="true">光辉革命播客</strong></div><div class="welcome-database">让价值文章有声化</div><div class="welcome-logo">${logo}</div></div>
+    <div class="scan"><svg viewBox="0 0 1920 1080" aria-hidden="true"><g fill="none" stroke="#080a08" stroke-width="2" stroke-linecap="round"><path/><path stroke="#fff"/><path/><path/><path/><path/><circle class="orbit-dot" r="8" fill="#ed821b" stroke="none"/><circle class="orbit-dot" r="8" fill="#ed821b" stroke="none"/><circle class="scan-core" cx="960" cy="540" r="5" fill="#080a08" stroke="none"/></g></svg><span>播放权限已授予</span></div>
+    <div class="welcome"><div class="welcome-panel"></div><div class="welcome-heading">接入已授权</div><div class="welcome-company"><strong>光辉革命播客</strong><strong class="welcome-highlight" aria-hidden="true">光辉革命播客</strong></div><div class="welcome-database">让价值文章有声化</div><div class="welcome-logo">${logo}</div></div>
   </section>
   <svg id="inspection-marks" viewBox="0 0 1920 1080" aria-hidden="true"><path id="inspection-lines"/><g id="inspection-corners"></g><circle id="inspection-point" r="1.8"/></svg>
   <div id="inspection-text" aria-hidden="true">节目宗旨：<strong>让价值文章有声化</strong></div>
   <section id="archive-ui" class="archive-ui" aria-label="节目选择">
-    <div class="archive-callout"><div class="callout-label"><i></i><span id="archive-category">理论学习</span></div><button class="file-title" data-action="open"><span id="selected-title">谁改造谁</span><span id="selected-title-plain"></span><span class="file-open">↗</span></button><div class="callout-summary" id="callout-summary"></div><div class="callout-foot"><button class="read-file" data-action="open"><span class="play-glyph">▶</span>播放本期</button><span class="callout-duration"><b id="selected-id">EP-<span id="selected-code">00</span></b><span id="selected-clearance">00:00</span></span></div></div>
+    <div class="archive-callout"><div class="callout-label"><i></i><span id="archive-category">理论学习</span></div><button class="file-title" data-action="open"><span id="selected-title">谁改造谁</span><span id="selected-title-plain"></span><span class="file-open">↗</span></button><div class="callout-summary" id="callout-summary"></div><div class="callout-foot"><button class="read-file" data-action="open"><span class="play-glyph">▶</span>调阅本期</button><span class="callout-duration"><b id="selected-id">EP-<span id="selected-code">00</span></b><span id="selected-clearance">00:00</span></span></div></div>
     <div id="hover-label" class="hover-label" hidden>EP-<span id="hover-code">00</span> / <span id="hover-title"></span></div>
     <div class="archive-counter"><span class="tiny-label">节目 / 选择</span><div><span id="selected-number">01</span><i>/</i><span class="count-total">12</span></div></div>
     <div class="archive-navigation"><button data-action="prev" aria-label="上一期">↑</button><div id="file-ticks" class="file-ticks"></div><button data-action="next" aria-label="下一期">↓</button></div>
@@ -91,7 +91,7 @@ const player = new EpisodePlayer($("#stage"), (playing) => {
   musicSuppressed = playing;
   configureAudio();
 });
-$("#viewport").insertAdjacentHTML("beforeend", '<button class="mobile-entry" data-action="skip">进入节目 <span>→</span></button>');
+$("#viewport").insertAdjacentHTML("beforeend", '<button class="mobile-entry" data-action="skip">接入终端 <span>→</span></button>');
 
 type Mode = "boot" | "archive" | "detail";
 let mode: Mode = "boot",
@@ -653,7 +653,7 @@ function renderModal() {
   if (!modal) return;
   modalTransition?.dispose();
   $("#modal-root").innerHTML =
-    `<div class="modal-backdrop"><section class="terminal-modal ${modal === "settings" ? "settings-modal" : ""}" role="dialog" aria-modal="true" aria-label="${modal === "settings" ? "系统设置" : modal === "saved" ? "收藏节目" : "节目检索"}"><div class="modal-top"><span>光辉革命播客 / ${modal === "settings" ? "SYSTEM PREFERENCES" : "EPISODE DIRECTORY"}</span><button data-action="close-modal" aria-label="关闭窗口">关闭 <span>×</span></button></div>${modal === "settings" ? settingsMarkup() : `<h2>${modal === "saved" ? "SAVED EPISODES" : "往期节目"}<small>${modal === "saved" ? "收藏节目" : "全部节目检索"}</small></h2><div class="search-field"><span>⌕</span><input id="archive-search" type="search" autocomplete="off" placeholder="输入期号、标题或栏目" aria-label="检索节目"/><span class="key">ESC</span></div><div class="category-filters">${categories.map((c, i) => `<button data-filter="${escapeHtml(c)}" class="${i === 0 ? "active" : ""}">${escapeHtml(c)}</button>`).join("")}</div><div class="result-header"><span>EPISODE / 节目</span><span>PUBLISHED / 发布</span><span>DURATION</span></div><div id="search-results" class="search-results"></div><div class="modal-bottom"><span id="result-count"></span><span>GLORIOUS REVOLUTION <i>●</i> CONNECTED</span></div>`}</section></div>`;
+    `<div class="modal-backdrop"><section class="terminal-modal ${modal === "settings" ? "settings-modal" : ""}" role="dialog" aria-modal="true" aria-label="${modal === "settings" ? "系统设置" : modal === "saved" ? "已存档案" : "档案检索"}"><div class="modal-top"><span>光辉革命播客 / ${modal === "settings" ? "SYSTEM PREFERENCES" : "ARCHIVE INDEX"}</span><button data-action="close-modal" aria-label="关闭窗口">关闭 <span>×</span></button></div>${modal === "settings" ? settingsMarkup() : `<h2>${modal === "saved" ? "SAVED EPISODES" : "往期档案"}<small>${modal === "saved" ? "已存档案" : "全档案检索"}</small></h2><div class="search-field"><span>⌕</span><input id="archive-search" type="search" autocomplete="off" placeholder="输入期号、标题或栏目" aria-label="检索节目"/><span class="key">ESC</span></div><div class="category-filters">${categories.map((c, i) => `<button data-filter="${escapeHtml(c)}" class="${i === 0 ? "active" : ""}">${escapeHtml(c)}</button>`).join("")}</div><div class="result-header"><span>EPISODE / 节目</span><span>PUBLISHED / 发布</span><span>DURATION</span></div><div id="search-results" class="search-results"></div><div class="modal-bottom"><span id="result-count"></span><span>GLORIOUS REVOLUTION <i>●</i> LINKED</span></div>`}</section></div>`;
   const backdrop = $(".modal-backdrop");
   backdrop.hidden = true;
   modalTransition = new SurfaceTransition(backdrop, $(".terminal-modal"));
@@ -692,7 +692,7 @@ function renderResults() {
             `<button class="result-row" data-result="${i}"><span class="result-name"><b>${r.id}</b><span>${escapeHtml(r.title)}<small>${escapeHtml(r.column)}</small></span>${saved.has(r.id) ? "<i>＋</i>" : ""}</span><span>${escapeHtml(r.pubDate)}</span><span>${escapeHtml(r.duration)} <i>↗</i></span></button>`,
         )
         .join("")
-    : `<div class="empty-results"><span>∅</span><strong>${modal === "saved" && !searchQuery ? "尚无收藏节目" : "没有匹配的节目"}</strong><p>${modal === "saved" && !searchQuery ? "播放节目时，选择「收藏本期」将其保存在此处。" : "尝试其他标题、期号，或切换栏目。"}</p><button data-action="reset-search">${modal === "saved" ? "查看全部节目 →" : "重置检索 →"}</button></div>`;
+    : `<div class="empty-results"><span>∅</span><strong>${modal === "saved" && !searchQuery ? "尚无已存档案" : "没有匹配的档案"}</strong><p>${modal === "saved" && !searchQuery ? "播放节目时，选择「收藏本期」将其保存在此处。" : "尝试其他标题、期号，或切换栏目。"}</p><button data-action="reset-search">${modal === "saved" ? "查看全部档案 →" : "重置检索 →"}</button></div>`;
   $("#result-count").textContent =
     `${String(results.length).padStart(2, "0")} EPISODES FOUND`;
 }
@@ -710,7 +710,7 @@ function motionSettingsMarkup() {
     : "当前使用完整动效。"}</p>${prefs.reduced ? '<button data-action="enable-motion">启用完整动效并重播 ↻</button>' : ""}</div>`;
 }
 function settingsMarkup() {
-  return `<h2>播客设置<small>终端偏好设置</small></h2><p class="settings-intro">光辉革命播客 <span>·</span> 全世界无产者，联合起来</p><div class="settings-list">${themeSettingsMarkup(prefs.colorTheme === "dark")}<label><div><strong>性能模式</strong><span>降低三维画质和渲染分辨率，保留完整动效；关闭后恢复原画质</span></div><input type="checkbox" data-pref="superPerformance" ${prefs.superPerformance ? "checked" : ""}/><i class="toggle"></i></label>${audioSettingsMarkup(prefs)}<label><div><strong>减少动态效果</strong><span>跳过开机动画，简化选档、镜头和文字动效</span></div><input type="checkbox" data-pref="reduced" ${prefs.reduced ? "checked" : ""}/><i class="toggle"></i></label></div>${motionSettingsMarkup()}${qualityMarkup(prefs.rendering)}${pwaSettingsMarkup()}<div class="settings-shortcuts"><span>操作说明</span><p><kbd>←</kbd><kbd>→</kbd> 切栏 <kbd>↑</kbd><kbd>↓</kbd> 选期 <kbd>ENTER</kbd> 播放 <kbd>/</kbd> 检索 <kbd>ESC</kbd> 返回</p></div><div class="settings-bottom">${document.fullscreenEnabled ? '<button data-action="fullscreen">全屏 <span>↗</span></button>' : ''}<button data-action="restart">重新开始 <span>↻</span></button></div><div class="modal-bottom"><span>GLORIOUS REVOLUTION PODCAST / 1.0 · 使用 MiSans 字体（小米） <a href="${assetUrl("fonts/MiSans-license.pdf")}" target="_blank" rel="noopener">字体许可</a></span><span>由 光辉革命播客 制作</span></div>`;
+  return `<h2>终端设置<small>SYSTEM PREFERENCES</small></h2><p class="settings-intro">光辉革命播客 <span>·</span> 全世界无产者，联合起来</p><div class="settings-list">${themeSettingsMarkup(prefs.colorTheme === "dark")}<label><div><strong>性能模式</strong><span>降低三维画质和渲染分辨率，保留完整动效；关闭后恢复原画质</span></div><input type="checkbox" data-pref="superPerformance" ${prefs.superPerformance ? "checked" : ""}/><i class="toggle"></i></label>${audioSettingsMarkup(prefs)}<label><div><strong>减少动态效果</strong><span>跳过开机动画，简化选档、镜头和文字动效</span></div><input type="checkbox" data-pref="reduced" ${prefs.reduced ? "checked" : ""}/><i class="toggle"></i></label></div>${motionSettingsMarkup()}${qualityMarkup(prefs.rendering)}${pwaSettingsMarkup()}<div class="settings-shortcuts"><span>操作说明</span><p><kbd>←</kbd><kbd>→</kbd> 切栏 <kbd>↑</kbd><kbd>↓</kbd> 选期 <kbd>ENTER</kbd> 播放 <kbd>/</kbd> 检索 <kbd>ESC</kbd> 返回</p></div><div class="settings-bottom">${document.fullscreenEnabled ? '<button data-action="fullscreen">全屏 <span>↗</span></button>' : ''}<button data-action="restart">重新开始 <span>↻</span></button></div><div class="modal-bottom"><span>VERITAS · POPULUS · VOX</span><span>GLORIOUS REVOLUTION PODCAST / 1.0 · 使用 MiSans 字体（小米） <a href="${assetUrl("fonts/MiSans-license.pdf")}" target="_blank" rel="noopener">字体许可</a></span><span>由 光辉革命播客 制作</span></div>`;
 }
 
 document.addEventListener("input", (e) => {
@@ -1091,10 +1091,10 @@ async function start() {
       loadBootWebfonts(),
       // With unicode-range faces, preload the opening's actual characters,
       // not every font shard. Other archive text loads on demand.
-      document.fonts.load("300 20px MiSans", "正在载入节目正在准备音频开始播放身份确认行为"),
-      document.fonts.load("400 20px MiSans", "身份信息确认请求已接收开始播放权限验证通过欢迎访问光辉革命播客内部资料期号时长栏目选择节目：0123456789 光辉革命播客"),
+      document.fonts.load("300 20px MiSans", "正在调取档案音频链路预热中授权播放身份确认行为"),
+      document.fonts.load("400 20px MiSans", "身份信息确认请求已接收正在调取档案音频链路预热中授权播放终端已上线播放权限已授予光辉革命播客内部资料期号时长栏目选择节目：0123456789 接入已授权"),
       document.fonts.load("600 20px MiSans", "光辉革命 马列毛主义播客 PODCAST 让价值文章有声化"),
-      document.fonts.load("700 20px MiSans", "GLORIOUS REVOLUTION PODCAST 欢迎来到"),
+      document.fonts.load("700 20px MiSans", "GLORIOUS REVOLUTION PODCAST 接入已授权"),
     ]);
     if (scene) bindScene(scene);
     savePrefs();

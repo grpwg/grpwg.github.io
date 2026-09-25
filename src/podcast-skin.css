@@ -500,7 +500,7 @@
   right: var(--edge);
   /* Bottom-anchored with auto height: the block grows upward from the player
      bar instead of being stretched between top and bottom. On short phones the
-     stretched box was far shorter than its content, so the "播放本期" CTA
+     stretched box was far shorter than its content, so the "调阅本期" CTA
      overflowed under the player bar and lost its clicks. */
   top: auto;
   bottom: 205px;
@@ -653,7 +653,7 @@
   border: 1px solid var(--theme-line, #c8c1b6);
 }
 
-/* "播放本期" belongs to the phone home; the episode page already carries the
+/* "调阅本期" belongs to the phone home; the episode page already carries the
    full player bar, so it only shows there as a compact action. */
 [data-layout="portrait"] .callout-foot .read-file {
   display: flex;

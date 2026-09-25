@@ -91,8 +91,8 @@ export class BootSequence {
       "identity", "request", "processing", "processingGlitch",
     ]);
     for (const [selector, key, text] of [
-      [".scan > span", "permission", "音频已就绪"],
-      [".welcome-heading", "welcome", "欢迎来到"],
+      [".scan > span", "permission", "播放权限已授予"],
+      [".welcome-heading", "welcome", "接入已授权"],
       [".welcome-database", "database", "让价值文章有声化"],
     ] as const) new BootLettering(this.el(selector), [key]).setText(text);
     this.companyInk.forEach((el) =>

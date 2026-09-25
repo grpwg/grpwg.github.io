@@ -37,11 +37,11 @@ export function bootMotion(appTime: number) {
             : "welcome";
   let auth = "";
   if (f < 363) {
-    auth = typed("节目已上线", f, 282, 295);
+    auth = typed("终端已上线", f, 282, 295);
     if (f >= 320) auth += " : " + typed("光辉革命播客", f, 321, 339);
-  } else if (f < 421) auth = typed("正在准备音频", f, 367, 389);
+  } else if (f < 421) auth = typed("音频链路预热中", f, 367, 389);
   else {
-    auth = typed("开始播放", f, 423, 440);
+    auth = typed("授权播放", f, 423, 440);
     if (f >= 449)
       auth += ".".repeat(Math.min(3, 1 + Math.floor((f - 449) / 4)));
     if (at(f, [479, 485, 486])) auth = "              SING...";
@@ -58,7 +58,7 @@ export function bootMotion(appTime: number) {
     f,
     step,
     auth,
-    access: "正在载入节目".slice(
+    access: "正在调取档案".slice(
       0,
       f < 170 ? 0 : accessCounts[Math.min(17, f - 170)],
     ),
