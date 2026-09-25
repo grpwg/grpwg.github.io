@@ -230,12 +230,15 @@ let scene: ArchiveScene | undefined;
 const accessLog: { id: string; time: string }[] = [];
 const columnMemory = archiveColumns.map((_, lane) => columnFiles(lane)[0]);
 /**
- * Catalogue order for "previous/next episode": columns as declared, files 1..N
- * inside each. Stepping past a column's last file enters the following column,
- * so the control walks all 5 columns instead of looping the current one. The
- * ←/→ column buttons keep their own per-column navigation and memory.
+ * Catalogue order for "previous/next episode": ascending episode number, so
+ * pressing next walks EP-00 → EP-01 → … across columns instead of looping the
+ * current one or jumping by column grouping. The ←/→ column buttons keep their
+ * own per-column navigation and memory.
  */
-const globalFiles = archiveColumns.flatMap((_, lane) => columnFiles(lane));
+const globalFiles = records
+  .map((record, index) => ({ number: record.number, index }))
+  .sort((a, b) => a.number - b.number || a.index - b.index)
+  .map(({ index }) => index);
 function recordAccess() {
   accessLog.unshift({
     id: records[selected].id,
@@ -319,18 +322,11 @@ window.visualViewport?.addEventListener("resize", fit);
 window.visualViewport?.addEventListener("scroll", fit);
 matchMedia("(pointer: coarse)").addEventListener("change", fit);
 fit();
-const initialFiles = columnFiles(fileLocation(selected).lane);
-// Columns do not all hold the same number of episodes, so the ticks are built
-// for the largest column once and the surplus is hidden per column.
-const tickCount = Math.max(
-  ...archiveColumns.map((_, lane) => columnFiles(lane).length),
-  initialFiles.length,
-);
-$("#file-ticks").innerHTML = Array.from({ length: tickCount }, (_, slot) =>
-  slot < initialFiles.length
-    ? `<button data-select="${initialFiles[slot]}"></button>`
-    : `<button data-select="" hidden></button>`,
-).join("");
+// One tick per episode of the whole catalogue, matching the global
+// previous/next order (columns in order, files inside each).
+$("#file-ticks").innerHTML = globalFiles
+  .map((index) => `<button data-select="${index}"></button>`)
+  .join("");
 const fileTicks = [...$("#file-ticks").querySelectorAll<HTMLButtonElement>("button")];
 
 function setMode(next: Mode) {
@@ -428,6 +424,9 @@ function openEpisode(index: number, navigation?: ArchiveNavigation) {
   selected = index;
   columnMemory[fileLocation(index).lane] = index;
   scene?.select(index, navigation);
+  // select() stops the decryption controller; restart it so the newly chosen
+  // file decrypts from frosted instead of staying masked.
+  scene?.restartDetailDecryption();
   // Immediate presentation supersedes any deferred slide presentation.
   pendingPresent = null;
   updateSelection(navigation);
@@ -483,14 +482,12 @@ function updateSelection(navigation?: ArchiveNavigation) {
   $("#selected-code").textContent = String(r.number).padStart(2, "0");
   selectedCode.finish();
   fileCounter.update({
-    value: files.indexOf(selected) + 1,
+    value: globalFiles.indexOf(selected) + 1,
     animated: !prefs.reduced && mode === "archive",
     direction:
-      navigation && "axis" in navigation && navigation.axis === "row"
-        ? direction
-        : "auto",
+      navigation && "axis" in navigation ? direction : "auto",
   });
-  $(".count-total").textContent = String(files.length).padStart(2, "0");
+  $(".count-total").textContent = String(globalFiles.length).padStart(2, "0");
   columnCounter.update({
     value: lane + 1,
     animated: !prefs.reduced && mode === "archive",
@@ -503,10 +500,9 @@ function updateSelection(navigation?: ArchiveNavigation) {
   $<HTMLButtonElement>('[data-action="column-prev"]').disabled = false;
   $<HTMLButtonElement>('[data-action="column-next"]').disabled = false;
   fileTicks.forEach((button, slot) => {
-    const index = files[slot];
+    const index = globalFiles[slot];
     const record = index === undefined ? undefined : records[index];
-    // A column with fewer episodes leaves surplus ticks idle; without this the
-    // read below throws and the whole column switch aborts half-way.
+    // Guards a mid-build catalogue shorter than the strip.
     if (!record) {
       button.hidden = true;
       button.dataset.select = "";
@@ -581,7 +577,7 @@ function renderDetail() {
   <div class="detail-actions"><button class="solid-button" data-action="bookmark"><span class="bookmark-glyph">▣</span><span class="bookmark-label">${saved.has(r.id) ? "已收藏" : "收藏本期"}</span></button><a class="download-button" href="${escapeHtml(r.audio)}" target="_blank" rel="noopener"><span>⤓</span>下载音频</a></div>`;
   $("#detail-content").setAttribute("tabindex", "-1");
   $('[data-action="bookmark"]').setAttribute("aria-pressed", String(saved.has(r.id)));
-  const siblings = columnFiles(fileLocation(selected).lane);
+  const siblings = globalFiles;
   $("#detail-ticks").innerHTML = siblings
     .map((index) => `<button data-action="episode-select" data-index="${index}" class="${index === selected ? "active" : ""}" aria-label="${records[index].id} ${escapeHtml(records[index].title)}"></button>`)
     .join("");

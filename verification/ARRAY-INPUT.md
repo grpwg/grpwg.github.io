@@ -35,8 +35,23 @@
 
 用户反馈「按下一期」只在当前栏目 8 份里循环过于反直觉，要求改为全部集中切换。
 
-- 新增目录序 `globalFiles`：按 `archiveColumns` 声明顺序拼接各栏 `columnFiles`（运行时内容为 `content/episodes.json` 的 11 期，栏目 3/2/2/2/2）。`stepFile`（上一期／下一期按钮、↑↓、滚轮）与 `stepEpisode`（详情页上一期／下一期）都沿该序前进后退并在末尾接回起点；离开本栏时改发 `axis:"lane"` 导航，数组与镜头横向进入相邻栏，物理坐标仍为无限循环（`selectionCell` 的 `nearestOccurrence` 落在相邻格位，不跳变）。
+- 新增目录序 `globalFiles`：按档案 `number`（期号）升序排列（运行时为 `content/episodes.json` 的 11 期，EP-00→EP-10；同号按记录下标稳定排序）。`stepFile`（上一期／下一期按钮、↑↓、滚轮）与 `stepEpisode`（详情页上一期／下一期）都沿该序前进后退并在末尾接回起点；离开本栏时改发 `axis:"lane"` 导航，数组与镜头横向进入相邻栏，物理坐标仍为无限循环（`selectionCell` 的 `nearestOccurrence` 落在相邻格位，不跳变）。
 - `stepColumn`（←／→、栏目按钮）与列内记忆 `columnMemory` 不变，仍按栏目切换并恢复该列选择。
 - 评审钩子新增 `window.rhine.catalogue()`（目录长度），供检查脚本推导整圈步数。
 - 已更新 `scripts/check-array-input.mjs`（原「八档循环」断言改为整目录循环 + 跨栏断言）与 `scripts/check-responsive.mjs`（原 8 步同栏断言改为整目录跨栏循环）。
 - 内置浏览器实测：从 EP-05 起连续下一期得到 EP-05→EP-06→EP-10→EP-00→EP-01→EP-07→EP-04→EP-08→EP-02→EP-09→EP-03→EP-05，与「栏目顺序 × 栏内顺序」完全一致；反向逐级回退正确；←／→ 与栏目按钮仍只换栏并恢复该列记忆；键盘 ↑↓ 全集、←→ 按栏。
+
+### 计数与刻度同步为全集（2026-09-25）
+
+全集顺序切换后，计数器与刻度条原本仍按栏目（当前栏目只有 3 集时显示 `01 / 03`、只有 3 个刻度），与步进自相矛盾。现统一为整目录：
+
+- `.count-total` = `globalFiles.length`，`fileCounter` = `globalFiles.indexOf(selected) + 1`；数字滚动方向在 `row`／`lane` 两种导航下都跟随步进方向（原先仅在 `row` 时跟随）。
+- 阵列刻度条（`#file-ticks`）与详情页刻度（`#detail-ticks`）都改为整目录一个刻度；刻度点击仍走 `select(index)`。
+- 实测 1920×1080／1366×768／1024×768／1376×1032 下 11 个刻度不溢出导航容器（`navOverflow = 0`），竖屏沿用既有规则隐藏阵列刻度条。
+- 内置浏览器实测：阵列 `↓` 四次计数 `01→02→03→04`（EP-00→EP-01→EP-07→EP-04），`↑` 两次回到 `03→02`。
+
+### 详情页换集重新解密（2026-09-25）
+
+用户反馈详情页按「下一期」后画面停在磨砂、不再解密。根因：`DecryptionController.select()` 内部调用 `leave()` 把 `active` 置为 false，而只有 `scene.setMode("detail")` 会 `enter()` 重新启动；详情页内换集走 `openEpisode → scene.select()`，只停不启 → 永远停在 `phase: waiting`、`clarity: 0`（实测 `extraction 4.05`、`cameraDetail 1` 条件已满足）。
+
+修复：新增 `scene.restartDetailDecryption()`（`targetDetail` 时调用 `decryption.enter(false)`），由 `openEpisode` 在 `select()` 之后调用，使新选档案重新从磨砂解密。实测详情页连续两次「下一期」，每次 `clarity` 均回到 `1`、`phase: clear`；详情页刻度为整目录 11 个。

@@ -2215,6 +2215,15 @@ export class ArchiveScene {
   }
   get decryptionFrame() { return this.decryption.frame; }
   finishDecryption() { this.decryption.finish(); }
+  /**
+   * Restart the detail decryption for a newly selected file. `select()` calls
+   * decryption.select(), which stops the controller; only setMode("detail")
+   * used to start it again, so stepping between files inside the detail page
+   * stayed frosted forever. Steps and detail tick picks call this.
+   */
+  restartDetailDecryption() {
+    if (this.targetDetail) this.decryption.enter(false);
+  }
   get detailVisibility() {
     return ease((this.detail - 0.25) / 0.55);
   }
