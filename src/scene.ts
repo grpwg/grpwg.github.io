@@ -201,6 +201,10 @@ export class ArchiveScene {
     this.cancelPointer(); this.setHover(null); this.relayActive = active;
     this.pointer.set(0, 0);
   }
+  /** True while a pointer holds the array or inertia is coasting it. */
+  get isSliding() {
+    return this.holdingArchive || this.archiveMomentum !== null;
+  }
   relayPulse(key: string) {
     const cell = this.relayPoints.get(key)?.cell;
     if (cell && !this.reduced) this.emitPulse(cell);
@@ -240,6 +244,34 @@ export class ArchiveScene {
   private shadowInput: string | null = null;
   /** Update() call counter: drives shadow cadence while the array moves. */
   private shadowTick = 0;
+  /**
+   * Motion-phase quality: while the array is visibly sliding, skip the two
+   * most expensive post passes. Restoring forces a full-quality frame, so
+   * every settled/static screenshot is unchanged.
+   */
+  motionQuality = true;
+  private motionDegraded = false;
+  private motionHold = 0;
+  private motionLane = 0;
+  private motionRail = 0;
+  private motionReady = false;
+  private setMotionDegraded(value: boolean) {
+    if (value === this.motionDegraded) return;
+    this.motionDegraded = value;
+    this.ao.enabled = this.quality.aoSamples > 0 && !value;
+    this.bokeh.enabled = this.quality.depthOfField > 0 && !value;
+    if (!value) {
+      // Repaint shadows at full quality the moment the slide settles.
+      this.shadowInput = null;
+      this.light.shadow.needsUpdate = true;
+      // Recompute shared-depth pairing in case a resize happened while
+      // degraded (the passes were disabled then, so resize saw them off).
+      this.ao.setSharing(
+        this.ao.enabled && this.bokeh.enabled &&
+        this.quality.aoResolution === 1 && !this.superPerformance,
+      );
+    }
+  }
   /** Segmented instance fingerprint: each group compares on its own so stats
    * can report which inputs invalidated the last full pass. */
   private fpStates = {
@@ -743,8 +775,8 @@ export class ArchiveScene {
       old.dispose();
       this.aoKernelSize = quality.aoSamples;
     }
-    this.ao.enabled = quality.aoSamples > 0;
-    this.bokeh.enabled = quality.depthOfField > 0;
+    this.ao.enabled = quality.aoSamples > 0 && !this.motionDegraded;
+    this.bokeh.enabled = quality.depthOfField > 0 && !this.motionDegraded;
     this.smaa.enabled = quality.antialias === "smaa";
     this.renderer.shadowMap.enabled = quality.shadows > 0;
     const size = Math.min(
@@ -1437,6 +1469,22 @@ export class ArchiveScene {
       this.rail.value = this.dragTrack.row;
       this.columnCamera.velocity = this.rail.velocity = 0;
     }
+    // Motion-phase quality: measure how fast the array actually travels and
+    // only degrade above a real sliding speed, so slow careful drags keep the
+    // full pipeline. A short hold avoids flapping between frames.
+    if (this.motionReady) {
+      const trackMove =
+        Math.abs(this.columnCamera.value - this.motionLane) +
+        Math.abs(this.rail.value - this.motionRail);
+      const speed = dt > 1e-4 ? trackMove / dt : 0;
+      const sliding = !cinematic && (this.holdingArchive || this.archiveMomentum !== null);
+      if (sliding && speed > 8) this.motionHold = 0.25;
+      else this.motionHold = Math.max(0, this.motionHold - dt);
+      this.setMotionDegraded(this.motionQuality && !this.reduced && this.motionHold > 0);
+    }
+    this.motionLane = this.columnCamera.value;
+    this.motionRail = this.rail.value;
+    this.motionReady = true;
     if (cinematic) {
       this.rail.value = 0;
       this.rail.velocity = 0;
@@ -1501,19 +1549,23 @@ export class ArchiveScene {
           this.shoulder.value,
           this.laneFocus.value,
         );
-      const height =
-        archiveWave(
-          row + this.coordinateOrigin.row,
-          lane + this.coordinateOrigin.lane,
-          this.scanTime,
-        ) *
-          this.scanBlend;
-      const breathing = idleWave(
-          row + this.coordinateOrigin.row,
-          lane + this.coordinateOrigin.lane,
-          time,
-        ) *
-          this.idleGain;
+      // Each decaying term is skipped once its amplitude is below 1e-4 world
+      // units (far below a subpixel): identical-looking renders, fewer sin/exp
+      // evaluations on the per-card hot path while the array slides.
+      const height = this.scanBlend > 1e-4
+        ? archiveWave(
+            row + this.coordinateOrigin.row,
+            lane + this.coordinateOrigin.lane,
+            this.scanTime,
+          ) * this.scanBlend
+        : 0;
+      const breathing = this.idleGain > 1e-4
+        ? idleWave(
+            row + this.coordinateOrigin.row,
+            lane + this.coordinateOrigin.lane,
+            time,
+          ) * this.idleGain
+        : 0;
       let pulseHeight = 0;
       if (!cinematic && !this.reduced) {
         let ripple = 0;
@@ -2102,7 +2154,10 @@ export class ArchiveScene {
     // and render exactly as before.
     this.shadowTick++;
     const shadowHeld = this.shadowCache && !cinematic && (this.archiveMomentum !== null || this.holdingArchive);
-    if ((!this.shadowCache || shadowKey !== this.shadowInput) && (!shadowHeld || (this.shadowTick & 1) === 0)) {
+    // Degraded motion skips more shadow frames; a settled frame keeps the
+    // exact cross-frame cache behavior (every === 1).
+    const shadowEvery = !this.shadowCache ? 1 : this.motionDegraded ? 3 : shadowHeld ? 2 : 1;
+    if ((!this.shadowCache || shadowKey !== this.shadowInput) && this.shadowTick % shadowEvery === 0) {
       this.renderer.shadowMap.needsUpdate = true;
       this.shadowInput = shadowKey;
       if (this.renderer.shadowMap.enabled) this.shadowRenders++;
@@ -2174,6 +2229,7 @@ export class ArchiveScene {
     };
     return {
       decryption: { ...this.decryption.frame, clarity: this.decryption.clarity },
+      motionDegraded: this.motionDegraded,
       topLeft: project(-2.5, 3.7, 0),
       topRight: project(2.5, 3.7, 0),
       labelTopLeft: project(-1.855, 3.27, 0.255),

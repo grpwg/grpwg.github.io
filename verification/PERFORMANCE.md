@@ -147,3 +147,14 @@ node --experimental-strip-types scripts/check-render-updates.mjs
 7. **阴影滑行降频**：阵列被按住或惯性滑行时，阴影深度图每两帧更新一次；停稳帧的输入指纹相同，仍走既有跨帧缓存逐帧判定，渲染结果与原先一致。
 
 验证：`npx tsc --noEmit`、`npm run build`、`node --experimental-strip-types scripts/check-archive-drag.mjs` 通过。1600×900 无头 Chromium（ANGLE/Vulkan）下 CPU 节流前的甩动 rAF 统计与基线 `2819fa7` 差异落在噪声内，说明该环境未能复现低端设备的卡顿；上述各项的实机收益与最终手感待用户在目标设备确认。
+
+## 运动期画质降级与滑动路径（2026-09-25）
+
+用户反馈滑动时整页掉帧后（静止帧有复用与阴影缓存、动帧跑满管线），按「只在运动帧降级、停稳立即恢复满画质」实现：
+
+1. **运动期画质降级**（`motionQuality`，默认开）：`update()` 用两轨道每帧位移除以 dt 得到实际滑行速度，仅当正在按住/惯性滑行且速度 > 8 世界单位/秒、且非减少动态效果时，关闭 AO 与景深两个最贵的后处理通道，并把阴影深度图更新降为每 3 帧。速度回落或松手后 0.25s 内恢复，恢复时强制重渲一帧（`shadowInput=null` + `needsUpdate`）并重算共享深度配对。慢速拖动不触发，所以静止截图与逐帧对照画面不变；`?no-motion-quality` 做 A/B，`stats().motionDegraded` 暴露状态。
+2. **波形振幅守卫**（`field()`）：`scanBlend`／`idleGain` 衰减到 1e-4 世界单位以下时跳过对应 `archiveWave`/`idleWave` 调用（远低于一个亚像素），结果肉眼一致、每卡三角函数调用减少。
+3. **音频条不在滑动中重载**：`updateSelection` 曾每换一格 `player.setTrack()`，而 `setTrack` 会重赋 `audio.src`（网络 + 解码）并重建 mediaSession。滑动中跳过，停稳后由 `frame()` 补一次。
+4. **采样数组原地收缩**：`ArchiveDrag.move` 的 `filter().slice()` 每次采样新建数组，改为原地 `splice`。
+
+验证：`npx tsc --noEmit`、`npm run build`、`check-archive-drag` 通过；一次无头冒烟确认滑动中降级生效、停稳恢复、详情不降级、无运行时报错，遮挡统计正常。静止帧与关闭该特性时的像素一致性、以及动帧的实际手感由用户人工检查。

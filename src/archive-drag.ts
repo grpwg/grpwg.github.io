@@ -55,8 +55,7 @@ export class ArchiveDrag {
     const value = {
       lane: dx * this.inverse.lane.x + dy * this.inverse.lane.y,
       row: dx * this.inverse.row.x + dy * this.inverse.row.y,
-    };
-    const previous = this.samples.at(-1);
+    };    const previous = this.samples.at(-1);
     if (previous) {
       const delta = { x: x - this.pointer.x, y: y - this.pointer.y };
       if (Math.hypot(delta.x, delta.y) > 1e-9) {
@@ -75,9 +74,12 @@ export class ArchiveDrag {
     if (previous?.time === time)
       this.samples[this.samples.length - 1] = { value, time };
     else this.samples.push({ value, time });
-    this.samples = this.samples
-      .filter((sample) => time - sample.time <= 120)
-      .slice(-32);
+    // Trim in place: a fast gesture delivers many coalesced samples, and a
+    // fresh array per sample is needless allocation on the slide path.
+    let stale = 0;
+    while (stale < this.samples.length && time - this.samples[stale].time > 120) stale++;
+    if (stale) this.samples.splice(0, stale);
+    if (this.samples.length > 32) this.samples.splice(0, this.samples.length - 32);
   }
 
   /** Actual release velocity in both tracks, in cells/second. */

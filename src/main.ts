@@ -392,6 +392,8 @@ function select(index: number, navigation?: ArchiveNavigation) {
 }
 /** Latest deferred selection presentation, flushed at frame start. */
 let pendingPresent: { navigation?: ArchiveNavigation } | null = null;
+/** Tracks slide→settle so the deferred player track loads once at rest. */
+let slideWasActive = false;
 function flushPresent() {
   if (!pendingPresent) return;
   const { navigation } = pendingPresent;
@@ -442,8 +444,10 @@ function updateSelection(navigation?: ArchiveNavigation) {
   categoryTitle.update({ text: r.column, animated: !prefs.reduced && mode === "archive" });
   $("#callout-summary").textContent = r.summary.replace(/\s+/g, " ").slice(0, 180);
   // Keep the player bar stocked so the phone home shows a live play button
-  // before the first episode is opened.
-  if (mode !== "boot") player.setTrack(playerTrack(r));
+  // before the first episode is opened. While the array is sliding, skip the
+  // reload: setTrack reassigns audio.src (network + decode) and rebuilding it
+  // per crossed cell is a real stutter source. It catches up on settle.
+  if (mode !== "boot" && !scene?.isSliding) player.setTrack(playerTrack(r));
   const direction =
     navigation && "axis" in navigation
       ? navigation.direction > 0
@@ -953,6 +957,9 @@ let lastTime = 0,
 function frame(ms: number) {
   if (document.hidden) { requestAnimationFrame(frame); return; }
   flushPresent();
+  const sliding = scene?.isSliding ?? false;
+  if (slideWasActive && !sliding && mode !== "boot") player.setTrack(playerTrack(records[selected]));
+  slideWasActive = sliding;
   const time = ms / 1000;
   const theme = scene?.themeAmount ?? (prefs.colorTheme === "dark" ? 1 : 0);
   paintTheme(theme);
@@ -1076,6 +1083,7 @@ async function start() {
     scene.shadowCache = !reviewParams.has("no-shadow-cache");
     scene.detailLod = !reviewParams.has("no-detail-lod");
     scene.instanceReuse = !reviewParams.has("no-instance-reuse");
+    scene.motionQuality = !reviewParams.has("no-motion-quality");
     scene.screenOccluders = opaquePanelRects;
     scene.setTheme(prefs.colorTheme === "dark", true);
     await Promise.all([
