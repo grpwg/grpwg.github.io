@@ -136,12 +136,62 @@ export class ArchiveScene {
   instanceReuse = true;
   /** Opaque overlay rectangles in CSS pixels, supplied by the page. */
   screenOccluders?: () => ScreenRect[];
+  /**
+   * Cached overlay rectangles: measuring them walks ancestors with
+   * getComputedStyle plus a layout-forcing getBoundingClientRect, so only
+   * re-measure when something that can move them changed (selection content,
+   * detail/reveal transitions, resize, theme or modal). Anything else reuses
+   * the identical array.
+   */
+  private occluderRectCache: ScreenRect[] | null = null;
+  private occluderRectKey = "";
+  private cachedOccluderRects(): ScreenRect[] | null {
+    if (!this.screenOccluders) return null;
+    const modal = document.querySelector(".modal-backdrop") !== null;
+    const key = [
+      cellKey(this.selectedCell),
+      Math.abs(this.targetDetail - this.detail) < 1e-3 ? 1 : 0,
+      Math.abs(this.targetReveal - this.reveal) < 1e-3 ? 1 : 0,
+      this.resizeCount,
+      String(this.theme.target),
+      modal ? 1 : 0,
+    ].join("|");
+    if (this.occluderRectCache && key === this.occluderRectKey) return this.occluderRectCache;
+    const rects = this.screenOccluders();
+    this.occluderRectCache = rects;
+    this.occluderRectKey = key;
+    return rects;
+  }
   private occlusion = new OcclusionGrid();
   private cardBounds = new THREE.Box3();
   private candidateCells: ArchiveCell[] = [];
   private candidateMatrices: THREE.Matrix4[] = [];
   private occludeeMeshes: THREE.Mesh[] = [];
   private occlusionStats = { candidates: 0, hidden: 0, meshesHidden: 0, occluders: 0 };
+  /** Reused per-frame scratch: never allocate inside update(). */
+  private hiddenCells = new Set<string>();
+  private static readonly UP = new THREE.Vector3(0, 1, 0);
+  private static readonly DETAIL_VIEW = new THREE.Vector3(-0.277, 0.238, 0.931);
+  private static readonly LABEL_OFFSET = new THREE.Vector3(-2.5, 3.7, 0);
+  private camRight = new THREE.Vector3();
+  private camUp = new THREE.Vector3();
+  private camAim = new THREE.Vector3();
+  private camBox = new THREE.Vector3();
+  private camPos = new THREE.Vector3();
+  private camDir = new THREE.Vector3();
+  private spectrumPoint = new THREE.Vector3();
+  /** Container CSS size cached on resize: per-frame clientWidth reads force
+   * layout whenever earlier DOM writes in the same frame dirtied it. */
+  private viewWidth = 0;
+  private viewHeight = 0;
+  private resizeCount = 0;
+  private viewSize() {
+    if (this.viewWidth <= 0 || this.viewHeight <= 0) {
+      this.viewWidth = this.container.clientWidth;
+      this.viewHeight = this.container.clientHeight;
+    }
+    return { w: this.viewWidth, h: this.viewHeight };
+  }
   onRelayPick?: (key: string | null) => void;
   setPlayfield(enabled: boolean, bands: MusicBands, strength: number, flatten: number, target: string | null, breathing = true) {
     this.playfield = { enabled, bands, strength, flatten, target, breathing };
@@ -188,6 +238,8 @@ export class ArchiveScene {
   private renderState = new RenderState();
   private shadowState = new RenderState();
   private shadowInput: string | null = null;
+  /** Update() call counter: drives shadow cadence while the array moves. */
+  private shadowTick = 0;
   /** Segmented instance fingerprint: each group compares on its own so stats
    * can report which inputs invalidated the last full pass. */
   private fpStates = {
@@ -272,7 +324,8 @@ export class ArchiveScene {
   private clock = 0;
   private loaded = false;
   private labelCanvas = document.createElement("canvas");
-  private labelTexture?: THREE.CanvasTexture;
+  /** File index currently shown on the main label (drives clone copies). */
+  private labelIndex = -1;
   private reduced = false;
   private quality = normalizeQuality(undefined);
   private appliedQuality = "";
@@ -548,24 +601,22 @@ export class ArchiveScene {
     }
     this.labelCanvas.width = 1024;
     this.labelCanvas.height = 440;
-    this.labelTexture = new THREE.CanvasTexture(this.labelCanvas);
-    this.labelTexture.colorSpace = THREE.SRGBColorSpace;
-    this.labelTexture.anisotropy =
-      this.renderer.capabilities.getMaxAnisotropy();
+    const firstLabel = this.paintLabelTexture(0);
+    this.labelIndex = 0;
     const label = new THREE.Mesh(
       new THREE.PlaneGeometry(0.99, 0.46),
       new THREE.MeshBasicMaterial({
-        map: this.labelTexture,
+        map: firstLabel,
         toneMapped: false,
         transparent: true,
         depthWrite: false,
       }),
     );
+    this.labelMaterial = label.material as THREE.MeshBasicMaterial;
     label.position.set(-1.36, 3.04, 0.255);
     this.model.add(label);
     this.appearance.prepare(this.model);
     this.appearance.apply(this.model, 0);
-    this.drawLabel(0);
     this.scene.add(this.model);
     this.model.position.copy(this.cellPosition(poolCell(this.selectedSlot)));
     this.loaded = true;
@@ -608,7 +659,8 @@ export class ArchiveScene {
     const canvas = document.createElement("canvas");
     canvas.width = this.labelCanvas.width;
     canvas.height = this.labelCanvas.height;
-    canvas.getContext("2d")!.drawImage(this.labelCanvas, 0, 0);
+    const current = this.labelCache.get(this.labelIndex)?.image;
+    canvas.getContext("2d")!.drawImage(current ?? this.labelCanvas, 0, 0);
     const texture = new THREE.CanvasTexture(canvas);
     texture.colorSpace = THREE.SRGBColorSpace;
     texture.anisotropy = this.renderer.capabilities.getMaxAnisotropy();
@@ -754,7 +806,7 @@ export class ArchiveScene {
       this.pendingPulse.row -= shift.row;
     }
   }
-  select(index: number, navigation?: ArchiveNavigation) {
+  select(index: number, navigation?: ArchiveNavigation, present = true) {
     if (!this.navigatingDrag) this.cancelPointer();
     this.setHover(null);
     this.lastInteraction = this.clock;
@@ -770,7 +822,10 @@ export class ArchiveScene {
       const canvas = document.createElement("canvas");
       canvas.width = 1024;
       canvas.height = 440;
-      canvas.getContext("2d")!.drawImage(this.labelCanvas, 0, 0);
+      // The outgoing copy keeps the previous label: copy the cached painting
+      // instead of the live canvas (identical pixels, no re-rasterization).
+      const previous = this.labelCache.get(this.labelIndex)?.image;
+      canvas.getContext("2d")!.drawImage(previous ?? this.labelCanvas, 0, 0);
       const map = new THREE.CanvasTexture(canvas);
       map.colorSpace = THREE.SRGBColorSpace;
       label.material = new THREE.MeshBasicMaterial({
@@ -819,15 +874,56 @@ export class ArchiveScene {
       this.pendingPulse = this.looping ? { ...cell } : null;
     } else this.emitPulse(cell);
     this.targetRotation = 0;
-    this.drawLabel(index);
+    // Deferred presentation (see main select): the label for an intermediate
+    // cell is never painted; the flush draws the latest index before render.
+    if (present) this.drawLabel(index);
+    else this.pendingLabel = index;
+  }
+  /** Paint the latest deferred label. Called at frame start, before render. */
+  presentSelection() {
+    if (this.pendingLabel >= 0) {
+      const index = this.pendingLabel;
+      this.pendingLabel = -1;
+      this.drawLabel(index);
+    }
   }
   private emitPulse(cell: ArchiveCell) {
     this.pulses.push({ ...cell, time: this.clock });
     this.pulses = this.pulses.slice(-6);
   }
+  /**
+   * Per-file label textures, painted once and reused. A fast slide crosses a
+   * new file almost every frame; redrawing the 1024x440 canvas and re-uploading
+   * it per crossing is pure waste because label content depends only on the
+   * file index. LRU bound keeps mobile texture memory in check; the bound
+   * texture is always newest so eviction can never pull it.
+   */
+  private labelCache = new Map<number, THREE.CanvasTexture>();
+  private static readonly LABEL_CACHE_LIMIT = 12;
+  private labelMaterial?: THREE.MeshBasicMaterial;
+  /** Latest file index whose label paint was deferred to frame start. */
+  private pendingLabel = -1;
   private drawLabel(index: number) {
-    if (!this.labelTexture) return;
-    const c = this.labelCanvas.getContext("2d")!;
+    // An immediate paint supersedes any deferred one.
+    this.pendingLabel = -1;
+    this.labelIndex = index;
+    const cached = this.labelCache.get(index);
+    if (cached) {
+      // Refresh LRU order so the bound texture is evicted last.
+      this.labelCache.delete(index);
+      this.labelCache.set(index, cached);
+    } else this.paintLabelTexture(index);
+    if (this.labelMaterial) {
+      const map = this.labelCache.get(index);
+      if (map && this.labelMaterial.map !== map) this.labelMaterial.map = map;
+    }
+  }
+  /** Paint index into a fresh canvas, cache it, and return the texture. */
+  private paintLabelTexture(index: number) {
+    const canvas = document.createElement("canvas");
+    canvas.width = 1024;
+    canvas.height = 440;
+    const c = canvas.getContext("2d")!;
     c.fillStyle = "#e9e5df";
     c.fillRect(0, 0, 1024, 440);
     // Red spine and rule, echoing the lockup's vertical bar.
@@ -852,7 +948,18 @@ export class ArchiveScene {
     c.fillStyle = "#c2192a";
     c.font = "bold 62px MiSans";
     c.fillText("播客", 822, 158);
-    this.labelTexture.needsUpdate = true;
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.colorSpace = THREE.SRGBColorSpace;
+    texture.anisotropy = this.renderer.capabilities.getMaxAnisotropy();
+    this.labelCache.set(index, texture);
+    if (this.labelCache.size > ArchiveScene.LABEL_CACHE_LIMIT) {
+      const oldest = this.labelCache.keys().next();
+      if (!oldest.done && oldest.value !== index) {
+        this.labelCache.get(oldest.value)?.dispose();
+        this.labelCache.delete(oldest.value);
+      }
+    }
+    return texture;
   }
   private ensureInstanceCapacity(required: number) {
     if (required <= this.instanceCapacity) return;
@@ -875,6 +982,9 @@ export class ArchiveScene {
     this.renderState.invalidate();
     const w = this.container.clientWidth,
       h = this.container.clientHeight;
+    this.viewWidth = w;
+    this.viewHeight = h;
+    this.resizeCount++;
     const kind = this.container.closest<HTMLElement>("[data-layout]")?.dataset.layout ?? "";
     const displayHeight = this.container.getBoundingClientRect().height;
     if (this.layoutKind === "cinematic" && kind !== "cinematic" && this.displayHeight > 0) {
@@ -1378,10 +1488,9 @@ export class ArchiveScene {
       const next = height + ((key === gameTarget ? .95 : 0) - height) * (this.reduced ? 1 : 1 - Math.exp(-dt * 8));
       if (next < .001 && key !== gameTarget) this.relayLifts.delete(key); else this.relayLifts.set(key, next);
     }
-    const spectrumPoint = new THREE.Vector3();
     const screenX = (row: number, lane: number) => {
-      spectrumPoint.set((lane - 2) * COLUMN_SPACING - trackX, -4.6, (row - 15.5) * ROW_SPACING + this.rail.value).project(this.camera);
-      return (spectrumPoint.x + 1) / 2;
+      this.spectrumPoint.set((lane - 2) * COLUMN_SPACING - trackX, -4.6, (row - 15.5) * ROW_SPACING + this.rail.value).project(this.camera);
+      return (this.spectrumPoint.x + 1) / 2;
     };
     const field = (row: number, lane: number) => {
       if (cinematic)
@@ -1558,20 +1667,19 @@ export class ArchiveScene {
       settle,
     );
     const responsiveOpening = Boolean(cinematic) && this.container.closest<HTMLElement>("[data-layout]")?.dataset.layout === "opening";
-    const openingAspect = responsiveOpening ? this.container.clientWidth / this.container.clientHeight / (16 / 9) : 1;
+    const openingAspect = responsiveOpening ? this.viewSize().w / this.viewSize().h / (16 / 9) : 1;
     const openingSpan = (value: number) => value / Math.min(1, openingAspect);
     const distance = THREE.MathUtils.lerp(
       THREE.MathUtils.lerp(28 + 7 * orbit, 140, settle),
       72,
       detail,
     );
-    const arrayAim = new THREE.Vector3(
+    const cameraAim = this.camAim.set(
       -1.091,
       THREE.MathUtils.lerp(-2.55 + 0.4 * orbit, -0.045, settle),
       THREE.MathUtils.lerp(2.48, 0.481, settle),
     );
-    const cameraAim = arrayAim.clone();
-    const viewDirection = new THREE.Vector3(
+    const viewDirection = this.camDir.set(
       -Math.sin(yaw) * Math.cos(elevation),
       Math.sin(elevation),
       Math.cos(yaw) * Math.cos(elevation),
@@ -1590,13 +1698,13 @@ export class ArchiveScene {
       );
     } else {
       viewDirection
-        .lerp(new THREE.Vector3(-0.277, 0.238, 0.931), detail)
+        .lerp(ArchiveScene.DETAIL_VIEW, detail)
         .normalize();
     }
     if (cinematic) {
       const pan = ease((shot - 25.4) / 0.95);
-      const right = new THREE.Vector3()
-        .crossVectors(new THREE.Vector3(0, 1, 0), viewDirection)
+      const right = this.camRight
+        .crossVectors(ArchiveScene.UP, viewDirection)
         .normalize();
       cameraAim.addScaledVector(
         right,
@@ -1641,46 +1749,43 @@ export class ArchiveScene {
         close,
       );
       const pixelScale = 1080 / openingSpan(THREE.MathUtils.lerp(span, 5.9, detail));
-      const right = new THREE.Vector3()
-        .crossVectors(new THREE.Vector3(0, 1, 0), viewDirection)
+      const right = this.camRight
+        .crossVectors(ArchiveScene.UP, viewDirection)
         .normalize();
-      const up = new THREE.Vector3()
+      const up = this.camUp
         .crossVectors(viewDirection, right)
         .normalize();
-      const anchorAim = this.model.position
-        .clone()
-        .add(new THREE.Vector3(-2.5, 3.7, 0));
+      const anchorAim = this.camBox.copy(this.model.position)
+        .add(ArchiveScene.LABEL_OFFSET);
       anchorAim.addScaledVector(right, -(screenX - 960) * openingAspect / pixelScale);
       anchorAim.addScaledVector(up, -(540 - screenY) / pixelScale);
       cameraAim.lerp(anchorAim, ease((shot - 27.3) / 0.5));
     }
-    const framing = archiveFraming(this.container.clientWidth, this.container.clientHeight, span, detail,
+    const framing = archiveFraming(this.viewSize().w, this.viewSize().h, span, detail,
       this.container.closest<HTMLElement>("[data-layout]")?.dataset.layout === "compact");
     if (!cinematic) {
-      const right = new THREE.Vector3()
-        .crossVectors(new THREE.Vector3(0, 1, 0), viewDirection)
+      const right = this.camRight
+        .crossVectors(ArchiveScene.UP, viewDirection)
         .normalize();
-      const up = new THREE.Vector3()
+      const up = this.camUp
         .crossVectors(viewDirection, right)
         .normalize();
-      const width = this.container.clientWidth, height = this.container.clientHeight;
+      const width = this.viewSize().w, height = this.viewSize().h;
       const pixelScale = height / framing.span;
       if (framing.portrait) {
         // Keep the preview camera independent of the live lift, wave and rail.
         // Following model.position here would visually cancel those motions.
-        const previewAim = new THREE.Vector3(0, -4.6 + settlingWave(0, 26.56) + 0.4 + 1.85, -2.17);
+        const previewAim = this.camBox.set(0, -4.6 + settlingWave(0, 26.56) + 0.4 + 1.85, -2.17);
         previewAim.addScaledVector(up, (framing.previewY - 0.5) * height / pixelScale);
         cameraAim.copy(previewAim);
       }
-      const detailAim = this.model.position
-        .clone()
-        .add(new THREE.Vector3(0, 1.85, 0));
+      const detailAim = this.camBox.copy(this.model.position);
+      detailAim.y += 1.85;
       detailAim.addScaledVector(right, (0.5 - framing.detailX) * width / pixelScale);
       detailAim.addScaledVector(up, (framing.detailY - 0.5) * height / pixelScale);
       cameraAim.lerp(detailAim, detail);
     }
-    const cameraPosition = cameraAim
-      .clone()
+    const cameraPosition = this.camPos.copy(cameraAim)
       .addScaledVector(viewDirection, distance);
     if (!cinematic && !this.reduced) {
       cameraPosition.x += this.pointer.x * 0.12;
@@ -1713,7 +1818,9 @@ export class ArchiveScene {
     const fixed = (Boolean(cinematic) || !this.looping) && !responsiveOpening;
     this.cells = fixed ? Array.from({ length: 160 }, (_, i) => poolCell(i))
       : this.visibility.update(this.camera, fog.far, trackX, entryZ + this.rail.value);
-    const hidden = new Set(this.outgoing.map(o => cellKey(o.cell)));
+    const hidden = this.hiddenCells;
+    hidden.clear();
+    for (const o of this.outgoing) hidden.add(cellKey(o.cell));
     hidden.add(cellKey(this.selectedCell));
     // Instance-input fingerprint. Passes A–C are pure functions of these values,
     // so a settled frame keeps last frame's results verbatim: no candidate
@@ -1723,7 +1830,7 @@ export class ArchiveScene {
     let occluderRects: ScreenRect[] | null = null;
     let reuseInstances = false;
     if (this.instanceReuse && !cinematic) {
-      occluderRects = this.screenOccluders ? this.screenOccluders() : null;
+      occluderRects = this.cachedOccluderRects();
       const inputs = this.fpStates;
       for (const state of Object.values(inputs)) state.begin();
       // Damped values are asymptotic in f64; float32 (the instance buffer's own
@@ -1731,7 +1838,7 @@ export class ArchiveScene {
       // to zero at a finite threshold instead of never reaching it.
       inputs.discrete.add(
         Number(fixed), Number(this.occlusionEnabled),
-        this.container.clientWidth, this.container.clientHeight,
+        this.viewSize().w, this.viewSize().h,
         Number(this.reduced), this.coordinateOrigin.row, this.coordinateOrigin.lane,
         this.selectedCell.row, this.selectedCell.lane,
         Number(activePlay), Number(play.enabled), Number(this.deferSelectionPulse),
@@ -1810,9 +1917,13 @@ export class ArchiveScene {
     // stays on its fixed 160-position reference and never culls.
     occluding = !fixed && this.occlusionEnabled && candidateCount > 0;
     if (occluding) {
-      this.occlusion.begin(this.camera, this.container.clientWidth, this.container.clientHeight);
+      const view = this.viewSize();
+      this.occlusion.begin(this.camera, view.w, view.h);
+      // Each box is projected once; pass C reuses the cached corners instead
+      // of projecting every box a second time.
       for (let k = 0; k < candidateCount; k++)
-        this.occlusion.addBox(this.cardBounds.min, this.cardBounds.max, transforms[k]);
+        if (this.occlusion.cacheBox(this.cardBounds.min, this.cardBounds.max, transforms[k], k))
+          this.occlusion.claimCached(k);
       const rects = occluderRects ?? (this.screenOccluders ? this.screenOccluders() : []);
       for (const rect of rects) this.occlusion.addRect(rect);
     }
@@ -1835,7 +1946,7 @@ export class ArchiveScene {
     for (let k = 0; k < candidateCount; k++) {
       const cell = candidates[k];
       const matrix = transforms[k];
-      if (occluding && this.occlusion.hidden(this.cardBounds.min, this.cardBounds.max, matrix)) {
+      if (occluding && this.occlusion.testCached(k)) {
         occluded++;
         continue;
       }
@@ -1986,7 +2097,12 @@ export class ArchiveScene {
     this.renderedFrames++;
     // Cross-frame shadow cache: identical caster inputs reuse last frame's
     // depth map; three resets needsUpdate after every shadow render.
-    if (!this.shadowCache || shadowKey !== this.shadowInput) {
+    // While the array itself is moving (held drag or inertia coast), the depth
+    // map trails by at most one frame: settled frames compare identical keys
+    // and render exactly as before.
+    this.shadowTick++;
+    const shadowHeld = this.shadowCache && !cinematic && (this.archiveMomentum !== null || this.holdingArchive);
+    if ((!this.shadowCache || shadowKey !== this.shadowInput) && (!shadowHeld || (this.shadowTick & 1) === 0)) {
       this.renderer.shadowMap.needsUpdate = true;
       this.shadowInput = shadowKey;
       if (this.renderer.shadowMap.enabled) this.shadowRenders++;
@@ -2039,7 +2155,8 @@ export class ArchiveScene {
     const p = this.model
       .localToWorld(new THREE.Vector3(x, y, 0.255))
       .project(this.camera);
-    return [(p.x + 1) * this.container.clientWidth / 2, (1 - p.y) * this.container.clientHeight / 2];
+    const view = this.viewSize();
+    return [(p.x + 1) * view.w / 2, (1 - p.y) * view.h / 2];
   }
   get decryptionFrame() { return this.decryption.frame; }
   finishDecryption() { this.decryption.finish(); }
@@ -2048,11 +2165,12 @@ export class ArchiveScene {
   }
   getStats() {
     this.model.updateMatrixWorld(true);
+    const view = this.viewSize();
     const project = (x: number, y: number, z: number) => {
       const p = this.model
         .localToWorld(new THREE.Vector3(x, y, z))
         .project(this.camera);
-      return [Math.round((p.x + 1) * this.container.clientWidth / 2), Math.round((1 - p.y) * this.container.clientHeight / 2)];
+      return [Math.round((p.x + 1) * view.w / 2), Math.round((1 - p.y) * view.h / 2)];
     };
     return {
       decryption: { ...this.decryption.frame, clarity: this.decryption.clarity },

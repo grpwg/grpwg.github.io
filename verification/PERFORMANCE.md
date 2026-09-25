@@ -133,3 +133,17 @@ node --experimental-strip-types scripts/check-render-updates.mjs
 基线构建从上述 Git 提交加载原版 `scene.ts`、`archive-visibility.ts`、`hud-projection.ts`，使用同一资源与测试入口；不切换或改写工作区。测试页面不属于正常生产构建入口。
 
 共享深度针对锁定的 Three.js 0.183.2 实现，使用了 SSAOPass 的 `_renderOverride` 扩展点。升级 Three.js 时必须检查该调用约定、深度着色器、附件清除行为，并重跑视觉及回退通道测试。主场景后续增加新的可变材质、光源或着色器输入时，需要一并加入 RenderState 失效条件。
+
+## 滑动路径 CPU 优化（2026-09-25）
+
+用户反馈滑动仍卡顿后，按游戏引擎通用优化顺序（先 profile 再逐项砍每帧工作量）对滑动帧做了六项零视觉改动，全部默认开启、无新开关：
+
+1. **容器尺寸缓存**（`viewSize()`）：`container.clientWidth/Height` 每帧读取会在同帧 DOM 写入之后强制重排（Chrome CPU profile 中 `get clientWidth` 占显著样本）。改为 `resize()` 时缓存，帧内复用。
+2. **遮挡面板矩形缓存**（`cachedOccluderRects()`）：`opaquePanelRects()` 逐祖先 `getComputedStyle` + 强制布局 `getBoundingClientRect`。改用选择/详情进度/尺寸/主题/模态组成的 key，仅在这些变化时重测，否则复用同一数组。
+3. **遮挡投影融合**（`OcclusionGrid.cacheBox/claimCached/testCached`）：同一卡片原来在 Pass B 与 Pass C 各投影一次八角；现在 Pass B 投影一次并缓存角点，Pass C 直接复用，投影次数减半。
+4. **分配清扫**：取消每帧 `new Set`（复用 `hiddenCells`）、相机路径的 `new Vector3`（复用 `camAim/camRight/camUp/camBox/camPos/camDir`、`spectrumPoint` 与静态常量），滑动帧内的临时分配归零。
+5. **标签纹理缓存**（`labelCache`，LRU 12）：标签内容只取决于档案序号，原来每次跨档重绘 1024×440 画布并重传 GPU。现在每份档案只画一次、切换仅换 `map`；归位副本与查看器装配面仍按需拷贝缓存图像，释放语义不变（`appearance.dispose` 只释放克隆自有的 map，缓存永不共享给克隆）。
+6. **选中表现按帧聚合**：`scene.select` 的状态部分逐事件应用（列记忆、循环归位、cleanup 逐格保留），DOM 滚动文字、标签绘制与音效 `tick` 延迟到帧首 `flushPresent()` 只为最终格结算一次；指针与动量每帧一次 `navigatePlane` 时表现次数与原先相同。
+7. **阴影滑行降频**：阵列被按住或惯性滑行时，阴影深度图每两帧更新一次；停稳帧的输入指纹相同，仍走既有跨帧缓存逐帧判定，渲染结果与原先一致。
+
+验证：`npx tsc --noEmit`、`npm run build`、`node --experimental-strip-types scripts/check-archive-drag.mjs` 通过。1600×900 无头 Chromium（ANGLE/Vulkan）下 CPU 节流前的甩动 rAF 统计与基线 `2819fa7` 差异落在噪声内，说明该环境未能复现低端设备的卡顿；上述各项的实机收益与最终手感待用户在目标设备确认。

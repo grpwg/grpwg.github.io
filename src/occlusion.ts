@@ -43,6 +43,12 @@ export class OcclusionGrid {
   private xs = new Float32Array(8);
   private ys = new Float32Array(8);
   private zs = new Float32Array(8);
+  /** Per-box projected corners, cached between the claim pass and the test
+   * pass so each box is projected once per frame instead of twice. */
+  private slotXs = new Float32Array(0);
+  private slotYs = new Float32Array(0);
+  private slotZs = new Float32Array(0);
+  private slotValid = new Uint8Array(0);
   private order = new Int32Array(8);
   private hull = new Int32Array(8);
   private rangeLo = 0;
@@ -105,6 +111,11 @@ export class OcclusionGrid {
     return this.xs[a] < this.xs[b] || (this.xs[a] === this.xs[b] && this.ys[a] < this.ys[b]);
   }
 
+  private cross(a: number, b: number, c: number) {
+    return (this.xs[b] - this.xs[a]) * (this.ys[c] - this.ys[a]) -
+      (this.ys[b] - this.ys[a]) * (this.xs[c] - this.xs[a]);
+  }
+
   /** Monotone-chain hull of the eight projected corners. */
   private buildHull() {
     const order = this.order;
@@ -119,19 +130,16 @@ export class OcclusionGrid {
       order[j + 1] = value;
     }
     const hull = this.hull;
-    const cross = (a: number, b: number, c: number) =>
-      (this.xs[b] - this.xs[a]) * (this.ys[c] - this.ys[a]) -
-      (this.ys[b] - this.ys[a]) * (this.xs[c] - this.xs[a]);
     let count = 0;
     for (let i = 0; i < 8; i++) {
       const k = order[i];
-      while (count >= 2 && cross(hull[count - 2], hull[count - 1], k) <= 0) count--;
+      while (count >= 2 && this.cross(hull[count - 2], hull[count - 1], k) <= 0) count--;
       hull[count++] = k;
     }
     const upper = count + 1;
     for (let i = 6; i >= 0; i--) {
       const k = order[i];
-      while (count >= upper && count >= 2 && cross(hull[count - 2], hull[count - 1], k) <= 0) count--;
+      while (count >= upper && count >= 2 && this.cross(hull[count - 2], hull[count - 1], k) <= 0) count--;
       hull[count++] = k;
     }
     return count - 1;
@@ -159,12 +167,61 @@ export class OcclusionGrid {
   }
 
   /**
+   * Project the box once and cache its corners in `slot` for the claim pass
+   * and the later test pass. False when any corner crosses the near plane:
+   * the caller must then treat the box as occluder-invalid and keep it as a
+   * visible occludee, exactly as before.
+   */
+  cacheBox(min: THREE.Vector3, max: THREE.Vector3, matrix: THREE.Matrix4, slot: number): boolean {
+    if (slot >= this.slotValid.length) {
+      const capacity = Math.max(slot + 1, this.slotValid.length * 2, 64);
+      const xs = new Float32Array(capacity * 8);
+      xs.set(this.slotXs);
+      this.slotXs = xs;
+      const ys = new Float32Array(capacity * 8);
+      ys.set(this.slotYs);
+      this.slotYs = ys;
+      const zs = new Float32Array(capacity * 8);
+      zs.set(this.slotZs);
+      this.slotZs = zs;
+      const valid = new Uint8Array(capacity);
+      valid.set(this.slotValid);
+      this.slotValid = valid;
+    }
+    const ok = this.project(min, max, matrix);
+    this.slotValid[slot] = ok ? 1 : 0;
+    if (!ok) return false;
+    this.slotXs.set(this.xs, slot * 8);
+    this.slotYs.set(this.ys, slot * 8);
+    this.slotZs.set(this.zs, slot * 8);
+    return true;
+  }
+
+  /** Restore a cached slot into the working corners. */
+  private loadSlot(slot: number) {
+    this.xs.set(this.slotXs.subarray(slot * 8, slot * 8 + 8));
+    this.ys.set(this.slotYs.subarray(slot * 8, slot * 8 + 8));
+    this.zs.set(this.slotZs.subarray(slot * 8, slot * 8 + 8));
+  }
+
+  /**
    * Claim every grid cell the solid box fully covers, remembering its far
    * depth. Returns false when nothing claimable was found (near-plane crossing
    * or a silhouette narrower than a cell).
    */
   addBox(min: THREE.Vector3, max: THREE.Vector3, matrix: THREE.Matrix4) {
     if (!this.project(min, max, matrix)) return false;
+    return this.claim();
+  }
+
+  /** Claim cells for a box projected by cacheBox (same arithmetic as addBox). */
+  claimCached(slot: number) {
+    if (!this.slotValid[slot]) return false;
+    this.loadSlot(slot);
+    return this.claim();
+  }
+
+  private claim() {
     const hullN = this.buildHull();
     if (hullN < 3) return false;
     let far = 0;
@@ -230,6 +287,17 @@ export class OcclusionGrid {
    */
   hidden(min: THREE.Vector3, max: THREE.Vector3, matrix: THREE.Matrix4) {
     if (!this.project(min, max, matrix)) return false;
+    return this.test();
+  }
+
+  /** Test a box projected by cacheBox (same arithmetic as hidden). */
+  testCached(slot: number) {
+    if (!this.slotValid[slot]) return false;
+    this.loadSlot(slot);
+    return this.test();
+  }
+
+  private test() {
     let left = Infinity;
     let right = -Infinity;
     let top = Infinity;

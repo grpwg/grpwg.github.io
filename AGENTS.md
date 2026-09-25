@@ -216,3 +216,9 @@
 - Chromium 系检查加 `REVIEW_CHANNEL=chromium` 与 `REVIEW_ARGS=--use-gl=angle,--use-angle=vulkan,--enable-gpu,--ignore-gpu-blocklist,--enable-features=Vulkan` 切到硬件 ANGLE/NVIDIA Vulkan（实测 54.5 fps、点击 91ms 通过）。脚本默认参数不变；`check:firefox` 走 Gecko 原生 GL，无需标志。细节见 `verification/WEB-INTEGRATION.md`。
 
 
+
+## 滑动路径性能（2026-09-25）
+
+- 用户反馈滑动仍卡顿后，按「先 profile 再砍每帧工作量」的引擎通用顺序做了六项零视觉改动：容器尺寸缓存、遮挡面板矩形按选择/尺寸/主题/模态缓存、遮挡投影一趟复用（Pass B 缓存角点供 Pass C）、滑动帧内临时分配归零、标签纹理按档案 LRU 缓存（跨档只换 map 不重绘上传）、选中表现（DOM 滚动文字／标签绘制／音效）按帧聚合到 `flushPresent()`。
+- 另在阵列被按住或惯性滑行时把阴影深度图更新降为每两帧一次；停稳帧输入指纹不变，仍按既有跨帧缓存逐帧判定。
+- 全部默认开启、无新开关；提交内不含 `content/episodes.json`。1600×900 无头 Chromium 节流前与基线差异在噪声内（未复现低端机卡顿），实机收益待用户确认。详见 `verification/PERFORMANCE.md`。

@@ -383,7 +383,20 @@ function select(index: number, navigation?: ArchiveNavigation) {
   columnMemory[fileLocation(selected).lane] = selected;
   if (mode === "detail") setMode("archive");
   activeTab = "overview";
-  scene?.select(selected, navigation);
+  // State (selection, column memory, model bookkeeping) applies per event so
+  // every passed cell is visited. Presentation (DOM, label paint, tick) is
+  // flushed once at frame start for the latest cell: bursts of selects in one
+  // frame share a single presentation with identical rendered pixels.
+  scene?.select(selected, navigation, false);
+  pendingPresent = { navigation };
+}
+/** Latest deferred selection presentation, flushed at frame start. */
+let pendingPresent: { navigation?: ArchiveNavigation } | null = null;
+function flushPresent() {
+  if (!pendingPresent) return;
+  const { navigation } = pendingPresent;
+  pendingPresent = null;
+  scene?.presentSelection();
   updateSelection(navigation);
   const columnMove = navigation && "axis" in navigation && navigation.axis === "lane";
   audio.play(columnMove ? "column" : "tick", columnMove ? navigation.direction * .45 : 0);
@@ -401,6 +414,8 @@ function openEpisode(index: number, direction = 0) {
   selected = index;
   columnMemory[fileLocation(index).lane] = index;
   scene?.select(index, { axis: "row", direction });
+  // Immediate presentation supersedes any deferred slide presentation.
+  pendingPresent = null;
   updateSelection({ axis: "row", direction });
   renderDetail();
   player.setTrack(playerTrack(records[index]), true);
@@ -492,6 +507,7 @@ function replayBootAfterModal(forcePreview: boolean) {
   audio.restartBoot();
   scene?.select(0);
   selected = 0;
+  pendingPresent = null;
   updateSelection();
   if (!forcePreview) audio.play("ui-tick");
 }
@@ -936,6 +952,7 @@ let lastTime = 0,
   fps = 0;
 function frame(ms: number) {
   if (document.hidden) { requestAnimationFrame(frame); return; }
+  flushPresent();
   const time = ms / 1000;
   const theme = scene?.themeAmount ?? (prefs.colorTheme === "dark" ? 1 : 0);
   paintTheme(theme);
