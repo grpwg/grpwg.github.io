@@ -229,6 +229,13 @@ let audioPreview = false, audioPreviewRequest = 0;
 let scene: ArchiveScene | undefined;
 const accessLog: { id: string; time: string }[] = [];
 const columnMemory = archiveColumns.map((_, lane) => columnFiles(lane)[0]);
+/**
+ * Catalogue order for "previous/next episode": columns as declared, files 1..N
+ * inside each. Stepping past a column's last file enters the following column,
+ * so the control walks all 5 columns instead of looping the current one. The
+ * ←/→ column buttons keep their own per-column navigation and memory.
+ */
+const globalFiles = archiveColumns.flatMap((_, lane) => columnFiles(lane));
 function recordAccess() {
   accessLog.unshift({
     id: records[selected].id,
@@ -404,29 +411,46 @@ function flushPresent() {
   audio.play(columnMove ? "column" : "tick", columnMove ? navigation.direction * .45 : 0);
 }
 function stepFile(direction: number) {
-  const files = columnFiles(fileLocation(selected).lane);
-  if (files.length < 2) return;
+  if (globalFiles.length < 2) return;
+  const from = fileLocation(selected);
+  const position = globalFiles.indexOf(selected);
+  const next = globalFiles[wrap(position + direction, globalFiles.length)];
+  const to = fileLocation(next);
   select(
-    files[(files.indexOf(selected) + direction + files.length) % files.length],
-    { axis: "row", direction },
+    next,
+    to.lane === from.lane
+      ? { axis: "row", direction }
+      : { axis: "lane", direction },
   );
 }
 /** The episode page keeps its own navigation so browsing stays on the page. */
-function openEpisode(index: number, direction = 0) {
+function openEpisode(index: number, navigation?: ArchiveNavigation) {
   selected = index;
   columnMemory[fileLocation(index).lane] = index;
-  scene?.select(index, { axis: "row", direction });
+  scene?.select(index, navigation);
   // Immediate presentation supersedes any deferred slide presentation.
   pendingPresent = null;
-  updateSelection({ axis: "row", direction });
+  updateSelection(navigation);
   renderDetail();
   player.setTrack(playerTrack(records[index]), true);
-  audio.play("tick");
+  audio.play(
+    navigation && "axis" in navigation && navigation.axis === "lane"
+      ? "column"
+      : "tick",
+  );
 }
 function stepEpisode(direction: number) {
-  const files = columnFiles(fileLocation(selected).lane);
-  if (files.length < 2) return;
-  openEpisode(files[(files.indexOf(selected) + direction + files.length) % files.length], direction);
+  if (globalFiles.length < 2) return;
+  const from = fileLocation(selected);
+  const position = globalFiles.indexOf(selected);
+  const next = globalFiles[wrap(position + direction, globalFiles.length)];
+  const to = fileLocation(next);
+  openEpisode(
+    next,
+    to.lane === from.lane
+      ? { axis: "row", direction }
+      : { axis: "lane", direction },
+  );
 }
 function stepColumn(direction: number) {
   const lane = fileLocation(selected).lane;
@@ -1173,6 +1197,8 @@ Object.assign(window, {
     archive: () => setMode("archive"),
     detail: () => openFile(),
     select: (i: number) => select(i),
+    // Catalogue order used by previous/next: columns in order, files inside.
+    catalogue: () => globalFiles.length,
     // Occlusion A/B review hook: toggling repaints the canvas because instance
     // counts and mesh visibility both enter the reuse snapshot.
     setOcclusion: (enabled: boolean) => {

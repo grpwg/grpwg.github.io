@@ -49,11 +49,13 @@ for(const [name,width,height,mobile] of cases.filter(([name])=>!process.env.REVI
    await page.waitForFunction(()=>!rhine.stats().archiveMomentum);
    assert.equal((await stats(page)).selectedCell.row,row+1,'Projected depth travel advances one file');
  }
- // Eight steps traverse the seam without changing the remembered content.
+ // Stepping through the catalogue crosses columns and wraps at the end.
  const loop=await stats(page);
- for(let i=0;i<8;i++){await page.locator('[data-action="next"]').click();await page.waitForTimeout(65)}
+ const total=await page.evaluate(()=>window.rhine.catalogue());
+ const lanes=new Set();
+ for(let i=0;i<total;i++){await page.locator('[data-action="next"]').click();await page.waitForTimeout(65);lanes.add((await stats(page)).selectedCell.lane)}
+ assert.ok(lanes.size>1,'Next crosses every column');
  assert.equal((await stats(page)).selected,loop.selected);
- assert.equal((await stats(page)).selectedCell.row,loop.selectedCell.row+8);
  await page.waitForTimeout(2000);
  await page.locator('.read-file').click();
  await page.waitForFunction(()=>window.rhine.stats().decryption.clarity===1,null,{timeout:60000});await page.waitForTimeout(1400);

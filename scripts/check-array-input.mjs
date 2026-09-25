@@ -211,17 +211,24 @@ try {
         () => !document.querySelector(".modal-backdrop"),
       );
     }
-    // Run across a complete row cycle, checking physical direction at the seam.
+    // "Next" walks the whole catalogue: columns in order, files 1..N inside
+    // each, wrapping after the last one — not a loop inside the current column.
     const loop = await stats(page);
-    const cycle = await page.evaluate(
-      () => Number(document.querySelector(".count-total")?.textContent ?? 8),
-    );
-    for (let i = 0; i < cycle; i++)
+    const total = await page.evaluate(() => window.rhine.catalogue());
+    assert.ok(total > 1, `catalogue holds the archive (${total})`);
+    const lanes = new Set();
+    for (let i = 0; i < total; i++) {
       await page.locator('[data-action="next"]').click();
-    assert.equal((await stats(page)).selected, loop.selected);
+      lanes.add((await stats(page)).selectedCell.lane);
+    }
+    assert.ok(
+      lanes.size > 1,
+      `next visits every column instead of looping one (${[...lanes].join(",")})`,
+    );
     assert.equal(
-      (await stats(page)).selectedCell.row,
-      loop.selectedCell.row + cycle,
+      (await stats(page)).selected,
+      loop.selected,
+      "next wraps the whole catalogue",
     );
     await settle(page);
     const interrupted = await stats(page);

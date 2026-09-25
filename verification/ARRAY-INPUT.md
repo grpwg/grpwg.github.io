@@ -24,9 +24,19 @@
 - `node --experimental-strip-types scripts/check-archive-drag.mjs`：小幅移动、逆投影还原任意屏幕方向、连续转弯、反向、停顿、减少动态效果、快慢速度差与最终吸附、负坐标循环，以及 30／60／120fps 的惯性积分一致性。相同 1.6 档距离、80ms 与 800ms 两种输入，模型测试最终位置为第 10 格与第 2 格。
 - `scripts/check-archive-momentum.mjs`：Chromium 实际鼠标与 CDP 触摸，比较同距离快拖和慢拖，检查松手后依次跨档、连续衰减、按住停止、改变方向接管、跨列惯性、键盘中止和减少动态效果。报告为 `.tools/array-input/momentum.json`。
 - `scripts/check-archive-diagonal.mjs`：桌面鼠标、手机竖屏和横屏 CDP 触摸，直接使用实际相机的两条斜向投影，检查正反方向、物理间距跟随，以及同一次拖动中水平、竖直、转弯、回到起点的屏幕位移。纯逻辑检查补充另一组相机、冻结映射、退化投影与双向惯性比例。报告为 `.tools/array-input/diagonal.json`。
-- `scripts/check-array-input.mjs`：实际 Chromium WebGL 页面，1920×1080 鼠标与 390×844 CDP 触摸。检查不足半格时阵列已经跟随、松手前切档、吸附、反向、悬停升起与复原、点击选择、滚轮、弹窗隔离、八档循环、捕获丢失和多指取消、取消后恢复、详情旋转。
+- `scripts/check-array-input.mjs`：实际 Chromium WebGL 页面，1920×1080 鼠标与 390×844 CDP 触摸。检查不足半格时阵列已经跟随、松手前切档、吸附、反向、悬停升起与复原、点击选择、滚轮、弹窗隔离、全档案顺序循环（走过全部栏目并回到起点）、捕获丢失和多指取消、取消后恢复、详情旋转。
 - `scripts/check-responsive.mjs`：Chromium 手机横屏与竖屏原有回归，包括滑动方向、循环、详情、正文、查看器和弹窗。
 - Windows Playwright WebKit 的 390×844 竖屏完整回归通过；使用合成 PointerEvent，不代表 iPhone 真机多指行为。初次开发服务器运行在查看器步骤超时，改用固定生产构建后完整通过。
 - `scripts/check-loop.mjs`：20,000 次相邻循环导航；`npm run check:viewport`：视口与原片构图；`npm run build`：TypeScript、资源与 PWA 构建。
 
 本地截图和报告在 `.tools/array-input/`、`.tools/responsive/`。手机触摸验证属于桌面浏览器模拟，没有新增 iPhone 真机测试数据。
+
+## 全集顺序切换（2026-09-25）
+
+用户反馈「按下一期」只在当前栏目 8 份里循环过于反直觉，要求改为全部集中切换。
+
+- 新增目录序 `globalFiles`：按 `archiveColumns` 声明顺序拼接各栏 `columnFiles`（运行时内容为 `content/episodes.json` 的 11 期，栏目 3/2/2/2/2）。`stepFile`（上一期／下一期按钮、↑↓、滚轮）与 `stepEpisode`（详情页上一期／下一期）都沿该序前进后退并在末尾接回起点；离开本栏时改发 `axis:"lane"` 导航，数组与镜头横向进入相邻栏，物理坐标仍为无限循环（`selectionCell` 的 `nearestOccurrence` 落在相邻格位，不跳变）。
+- `stepColumn`（←／→、栏目按钮）与列内记忆 `columnMemory` 不变，仍按栏目切换并恢复该列选择。
+- 评审钩子新增 `window.rhine.catalogue()`（目录长度），供检查脚本推导整圈步数。
+- 已更新 `scripts/check-array-input.mjs`（原「八档循环」断言改为整目录循环 + 跨栏断言）与 `scripts/check-responsive.mjs`（原 8 步同栏断言改为整目录跨栏循环）。
+- 内置浏览器实测：从 EP-05 起连续下一期得到 EP-05→EP-06→EP-10→EP-00→EP-01→EP-07→EP-04→EP-08→EP-02→EP-09→EP-03→EP-05，与「栏目顺序 × 栏内顺序」完全一致；反向逐级回退正确；←／→ 与栏目按钮仍只换栏并恢复该列记忆；键盘 ↑↓ 全集、←→ 按栏。
