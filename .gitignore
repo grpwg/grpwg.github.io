@@ -3,5 +3,8 @@ dist/
 .DS_Store
 *.local
 
+# Regenerable WAV masters from scripts/render-audio.mjs
+.tools/
+
 # Local Command Code agent configuration (not part of the site)
 .commandcode/

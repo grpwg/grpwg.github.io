@@ -4,7 +4,7 @@ export function audioSettingsMarkup(prefs: AudioPreferences) {
   return `<div class="audio-settings">${(
     [
       ["sound", "soundVolume", "INTERFACE SOUND", "操作与启动音效"],
-      ["music", "musicVolume", "BACKGROUND MUSIC", "观测室 · 背景音乐"],
+      ["music", "musicVolume", "BACKGROUND MUSIC", "国际歌 · 背景音乐"],
     ] as const
   )
     .map(

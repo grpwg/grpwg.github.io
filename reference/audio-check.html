@@ -1,11 +1,11 @@
 <!doctype html><html lang="zh-CN"><meta charset="utf-8"><title>声音验证 · Rhine Lab</title>
 <style>body{max-width:980px;margin:40px auto;padding:0 24px;background:#eee9df;color:#232721;font:16px system-ui;line-height:1.6}button{padding:12px 24px;margin:8px 12px 8px 0}pre{white-space:pre-wrap;font-size:13px}audio{width:100%}video{width:100%;max-height:380px}a{color:inherit}</style>
-<h1>声音验证与试听</h1><p>原创配乐「观测室」· 72 BPM · 53.33 秒循环。下方为固定混音；主程序随浏览、阅读和模型查看调整三条声部。</p>
+<h1>声音验证与试听</h1><p>安静钢琴《国际歌》· 72 BPM · 106.67 秒循环（主歌 + 副歌）。下方为固定混音；主程序随浏览、阅读和模型查看调整三条声部。</p>
 <p><a href="boot-audio.html">播放完整开场（含原片输入音效） →</a></p>
 <p>卡片动作使用玻璃轻碰；窗口、标志、权限和整块文字使用系统电子反馈；逐字输入使用原片短音。可先比较「打开窗口」「启动标志」「文字显现」，再听卡片动作。</p>
 <section aria-label="逐字输入对照"><h2>逐字输入 · 原片复刻</h2><p>原片输入片段（6.84–7.39 秒，已匹配试听音量）</p><audio controls aria-label="原片逐字输入片段" src="/reference/typing-original.wav"></audio><p>复刻版（原片三个短音轮替，两个输入串与中间停顿）</p><audio controls aria-label="复刻逐字输入" src="/audio/typing-preview.wav"></audio></section>
 <h2>背景音乐与单项音效</h2>
-<audio controls src="/audio/observatory-preview.mp3"></audio>
+<audio controls src="/audio/internationale-preview.mp3"></audio>
 <p id="audition" aria-label="音效试听"></p>
 <button id="test">运行音频检查</button><button id="stop">停止测试声音</button><a href="/?scene=archive">进入终端</a>
 <pre id="result">等待检查。点击后会解码音乐并在离线音频上下文中检查信号。</pre>
@@ -49,7 +49,7 @@ document.querySelector('#test').onclick=async()=>{
   check(!hasTypingBetween(18.9,19.48),'闪动后文字恢复不产生输入声');
   for(const name of ['atmosphere','motif','pulse']){
    const c=new OfflineAudioContext(2,48000,48000),b=await c.decodeAudioData(await(await fetch(`/audio/${name}.ogg`)).arrayBuffer());
-   check(Math.abs(b.duration-160/3)<.002,`${name} 循环时长准确`);
+   check(Math.abs(b.duration-320/3)<.002,`${name} 循环时长准确`);
    for(let channel=0;channel<2;channel++){
     const x=b.getChannelData(channel);let peak=0;for(const sample of x){checkFinite(sample);peak=Math.max(peak,Math.abs(sample));}
     check(peak<.9&&Math.abs(x[0]-x[x.length-1])<.01,`${name} 声道 ${channel+1} 无削波、接缝 < 0.01`);
