@@ -3,10 +3,16 @@ import { mkdir, writeFile, readFile } from 'node:fs/promises';
 import assert from 'node:assert/strict';
 const require = createRequire(import.meta.url);
 const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
-const browser = await chromium.launch({ channel: 'msedge', headless: true });
+const browser = await chromium.launch({
+  ...(process.env.REVIEW_CHANNEL ? { channel: process.env.REVIEW_CHANNEL } : {}),
+  // Comma-separated Chromium flags; empty keeps the stock launch. Used to pin
+  // hardware GL in headless environments that otherwise fall back to SwiftShader.
+  ...(process.env.REVIEW_ARGS ? { args: process.env.REVIEW_ARGS.split(",").filter(Boolean) } : {}),
+  headless: true,
+});
 const context = await browser.newContext({ viewport: { width: 1600, height: 900 } });
 const page = await context.newPage(), errors = [], results = {};
-page.on('pageerror', error => errors.push(String(error)));
+page.on('pageerror', error => { errors.push(String(error)); console.error('[pageerror]', error.stack || error); });
 page.on('console', message => { if (message.type() === 'error' && /THREE|shader|WebGL/.test(message.text())) errors.push(message.text()); });
 const origin = process.env.REVIEW_URL || 'http://127.0.0.1:5188';
 await mkdir('verification/web-integration', { recursive: true });
@@ -21,7 +27,6 @@ try {
   await page.waitForFunction(() => window.rhine.stats().startup === 'started');
   await page.evaluate(() => window.rhine.archive());
   await page.waitForTimeout(1000);
-  assert.equal((await stats()).wallpaper, null);
   assert.equal(await page.locator('.three-toggle').count(), 0);
   assert.equal(await page.evaluate(() => typeof window.wallpaperPropertyListener), 'undefined');
   await page.locator('[data-action="settings"]').click();
@@ -54,9 +59,11 @@ try {
   await page.evaluate(() => window.rhine.detail()); await page.waitForTimeout(2800);
   assert.equal((await stats()).mode, 'detail');
   await page.screenshot({ path: 'verification/web-integration/dark-detail.png' });
-  await page.locator('[data-action="model-viewer"]').click(); await page.waitForTimeout(1600);
-  assert.ok(await page.locator('canvas').count() >= 2);
-  await page.keyboard.press('Escape'); await page.waitForTimeout(400);
+  // 360° 查看器已在 92c2fd1 删除（src/model-viewer.ts），详情页现在只有主场景画布。
+  assert.ok(await page.locator('#detail-content').isVisible());
+  assert.equal(await page.locator('canvas').count(), 1);
+  await page.keyboard.press('Escape'); await page.waitForTimeout(700);
+  assert.equal((await stats()).mode, 'archive');
   results.viewports = [];
   for (const [width, height] of [[2560,1080],[390,844],[844,390]]) {
     await page.setViewportSize({ width, height }); await page.waitForTimeout(600);
@@ -70,8 +77,8 @@ try {
   assert.match(html, /rel="manifest"/); assert.doesNotMatch(html, /wallpaperPropertyListener/);
   const worker = await readFile('dist/sw.js', 'utf8'); assert.ok(worker.length > 1000);
   assert.deepEqual(errors, []);
-  results.startupGesture = results.persistedPerformance = results.restoredQuality = results.numericMotion = results.viewer = results.pwaBuild = true;
+  results.startupGesture = results.persistedPerformance = results.restoredQuality = results.numericMotion = results.detailPanel = results.pwaBuild = true;
   results.errors = errors;
   await writeFile('verification/web-integration/results.json', JSON.stringify(results, null, 2));
-  console.log('Web entry, host isolation, theme, performance persistence/restoration, keyboard, clock animation, detail/viewer, responsive and PWA build passed.');
+  console.log('Web entry, host isolation, theme, performance persistence/restoration, keyboard, clock animation, detail panel, responsive and PWA build passed.');
 } finally { await browser.close(); }

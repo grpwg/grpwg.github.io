@@ -15,7 +15,7 @@ const server = createServer(async(req,res)=>{try{
   res.setHeader('Content-Type',({'.html':'text/html','.js':'text/javascript','.css':'text/css','.woff2':'font/woff2'})[extname(path)]||'application/octet-stream');res.end(data);
 }catch{res.statusCode=404;res.end();}});
 await new Promise(r=>server.listen(5193,'127.0.0.1',r));
-const browser = await chromium.launch({channel:'msedge',headless:true});
+const browser = await chromium.launch({...(process.env.REVIEW_CHANNEL?{channel:process.env.REVIEW_CHANNEL}:{}),...(process.env.REVIEW_ARGS?{args:process.env.REVIEW_ARGS.split(",").filter(Boolean)}:{}),headless:true});
 const results = [], errors = [];
 try {
   for(const scenario of (process.env.PERF_CASES || 'static,idle,navigate,detail,music,opening').split(',')) {

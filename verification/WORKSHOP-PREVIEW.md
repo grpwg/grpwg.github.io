@@ -1,5 +1,7 @@
 # 工作台工坊预览
 
+> **历史记录（2026-09-24）**：Wallpaper Engine 支持已移除，本文的创意工坊发布、`docs/WORKSHOP-PUBLISH.md`、`docs/WORKSHOP-DESCRIPTION.txt`、`scripts/record-workshop-preview.mjs` 与 `scripts/encode-workshop-preview.py` 已删除，内容仅作追溯参考。
+
 2026-09-10 用户改为自行发布，要求录制 GIF，并参照本地工坊项目 3088099655 的镜头方式。
 
 参考预览分析：256×256，127 个编码帧，12.8 秒，帧延迟主要 100ms；全景与局部裁切交替，局部轻微移动。具体制作软件无法仅凭 GIF 确定。没有使用其人物图片、文字、4K 标记或任何画面作为本作品素材。

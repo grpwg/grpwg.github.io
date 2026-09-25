@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { ArchiveVisibility } from "./archive-visibility";
 import { InstanceUpdates } from "./instance-updates";
+import { OcclusionGrid, type ScreenRect } from "./occlusion";
 import { RenderState } from "./render-state";
 import { SharedDepthAO, SharedDepthBokeh } from "./shared-depth";
 import { disposeThreeTree } from "./three-resources";
@@ -58,6 +59,9 @@ export class ArchiveScene {
   private inputEvents = new AbortController();
   private presence = 1;
   private presenceTarget = 1;
+  private canvasOpacity = "";
+  private renderSuspended = false;
+  private suspendedFrames = 0;
   setPresentationVisible(visible: boolean, immediate = false) {
     this.presenceTarget = Number(visible);
     if (immediate) this.presence = this.presenceTarget;
@@ -87,7 +91,6 @@ export class ArchiveScene {
     this.renderer.domElement.remove();
     this.loaded = false;
   }
-  uiOnlyParallax = false;
   private theme = new ThemeWave();
   private subduedIndex = { value: 0 };
   private selectedIndexOnly = false;
@@ -123,6 +126,16 @@ export class ArchiveScene {
   private relayLifts = new Map<string, number>();
   private relayPoints = new Map<string, { cell: ArchiveCell; point: THREE.Vector3 }>();
   private relayActive = false;
+  /** Camera-space culling: solid cards and opaque overlays drop what they cover. */
+  occlusionEnabled = true;
+  /** Opaque overlay rectangles in CSS pixels, supplied by the page. */
+  screenOccluders?: () => ScreenRect[];
+  private occlusion = new OcclusionGrid();
+  private cardBounds = new THREE.Box3();
+  private candidateCells: ArchiveCell[] = [];
+  private candidateMatrices: THREE.Matrix4[] = [];
+  private occludeeMeshes: THREE.Mesh[] = [];
+  private occlusionStats = { candidates: 0, hidden: 0, meshesHidden: 0, occluders: 0 };
   onRelayPick?: (key: string | null) => void;
   setPlayfield(enabled: boolean, bands: MusicBands, strength: number, flatten: number, target: string | null, breathing = true) {
     this.playfield = { enabled, bands, strength, flatten, target, breathing };
@@ -172,8 +185,6 @@ export class ArchiveScene {
   private visibility = new ArchiveVisibility();
   private instanceCapacity = LOOP_COLUMNS * LOOP_ROWS;
   private drawnCells: ArchiveCell[] = [];
-  private extraCoverage = false;
-  setArchiveCoverage(extra: boolean) { this.extraCoverage = extra; }
   private model = new THREE.Group();
   private appearance = new CardAppearance();
   private decryption = new DecryptionController();
@@ -462,6 +473,11 @@ export class ArchiveScene {
       this.themeAttribute ??= new THREE.InstancedBufferAttribute(new Float32Array(count), 1).setUsage(THREE.DynamicDrawUsage);
       geom.setAttribute("archiveTheme", this.themeAttribute);
       themeMaterial(arrayMat, name, true, this.subduedIndex);
+      // The card's solid envelope in card space: one projected box stands in
+      // for the whole slab in occlusion tests (frosted cover over an opaque
+      // carrier, see verification/OCCLUSION.md).
+      geom.computeBoundingBox();
+      if (geom.boundingBox) this.cardBounds.union(geom.boundingBox);
       const inst = new THREE.InstancedMesh(geom, arrayMat, count);
       // All surfaces move rigidly together; share the transform buffer on the GPU.
       inst.instanceMatrix = this.instances[0]?.instanceMatrix ?? inst.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
@@ -861,10 +877,17 @@ export class ArchiveScene {
       (-(y - r.top) / r.height) * 2 + 1,
     );
     this.raycaster.setFromCamera(this.cursor, this.camera);
-    const hit = this.raycaster.intersectObjects(
+    const hits = this.raycaster.intersectObjects(
       [this.instances[0], this.model, ...this.outgoing.map((o) => o.group)],
       true,
-    )[0];
+    );
+    // Occluded meshes write nothing to the frame, so picking continues past
+    // them to the first surface that is actually on screen.
+    const hit = hits.find((entry) => {
+      for (let object: THREE.Object3D | null = entry.object; object; object = object.parent)
+        if (!object.visible) return false;
+      return true;
+    });
     if (!hit) return null;
     if (hit.instanceId !== undefined) return { ...this.drawnCells[hit.instanceId] };
     let object: THREE.Object3D | null = hit.object;
@@ -1167,6 +1190,9 @@ export class ArchiveScene {
   update(
     time: number,
     cinematic?: { reveal: number; lift: number; zoom: number; time: number },
+    // A modal covers the stage with an 18px backdrop blur: keep simulating so
+    // the array never jumps when it closes, but skip the whole GPU pass.
+    suspendRender = false,
   ) {
     const elapsed = Math.max(0, time - this.last || 0.016);
     const dt = Math.min(elapsed, 0.05);
@@ -1175,7 +1201,11 @@ export class ArchiveScene {
     if (!this.loaded) return;
     const step = this.reduced ? 1 : Math.min(elapsed, .25) / 1.1;
     this.presence += Math.sign(this.presenceTarget - this.presence) * Math.min(step, Math.abs(this.presenceTarget - this.presence));
-    this.renderer.domElement.style.opacity = String(THREE.MathUtils.clamp(this.presence / .16, 0, 1));
+    const presence = String(THREE.MathUtils.clamp(this.presence / .16, 0, 1));
+    if (presence !== this.canvasOpacity) {
+      this.renderer.domElement.style.opacity = presence;
+      this.canvasOpacity = presence;
+    }
     this.theme.beginFrame();
     themeEnvironment(this.scene, this.renderer, this.themeAmount);
     const blend = 1 - Math.exp(-dt * (this.reduced ? 35 : 2.8));
@@ -1591,7 +1621,7 @@ export class ArchiveScene {
     const cameraPosition = cameraAim
       .clone()
       .addScaledVector(viewDirection, distance);
-    if (!cinematic && !this.reduced && !this.uiOnlyParallax) {
+    if (!cinematic && !this.reduced) {
       cameraPosition.x += this.pointer.x * 0.12;
       cameraPosition.y -= this.pointer.y * 0.12;
     }
@@ -1621,13 +1651,15 @@ export class ArchiveScene {
     // is final for this frame. Picking uses the same packed index-to-cell map.
     const fixed = (Boolean(cinematic) || !this.looping) && !responsiveOpening;
     this.cells = fixed ? Array.from({ length: 160 }, (_, i) => poolCell(i))
-      : this.visibility.update(this.camera, fog.far, trackX, entryZ + this.rail.value, this.extraCoverage);
+      : this.visibility.update(this.camera, fog.far, trackX, entryZ + this.rail.value);
     const hidden = new Set(this.outgoing.map(o => cellKey(o.cell)));
     hidden.add(cellKey(this.selectedCell));
-    this.drawnCells = [];
-    this.relayPoints.clear();
-    this.matrixUpdates ??= new InstanceUpdates(this.instances[0].instanceMatrix);
-    if (this.themeAttribute) this.themeUpdates ??= new InstanceUpdates(this.themeAttribute);
+    // Pass A — candidate slots. Each transform is composed once and shared by
+    // the occluder pass and the draw pass, so nothing is transformed twice.
+    const candidates = this.candidateCells;
+    const transforms = this.candidateMatrices;
+    candidates.length = 0;
+    let candidateCount = 0;
     for (const cell of this.cells) {
       const { row, lane } = cell;
       if (hidden.has(cellKey(cell))) continue;
@@ -1635,18 +1667,49 @@ export class ArchiveScene {
       const y = -4.6 + field(row, lane) + hoverLift(cell) - this.presentationDrop(cell);
       const z = (row - 15.5) * ROW_SPACING + entryZ + this.rail.value;
       if (!fixed && !this.visibility.intersects(x, y, z)) continue;
-      const i = this.drawnCells.length;
-      this.ensureInstanceCapacity(i + 1);
-      this.drawnCells.push(cell);
-      this.themeUpdates?.scalar(i, this.theme.sample(cell, time));
       const slope = field(row + .5, lane) - field(row - .5, lane);
       this.dummy.position.set(x, y, z);
       this.dummy.rotation.set(slope * .024 * (1 - detail), 0, 0);
       this.dummy.scale.setScalar(1);
       this.dummy.updateMatrix();
-      if (play.enabled) this.relayPoints.set(cellKey(cell), { cell: { ...cell }, point: new THREE.Vector3(0, 3.5, 0).applyMatrix4(this.dummy.matrix) });
-      this.matrixUpdates!.set(i * 16, this.dummy.matrix.elements);
+      candidates.push(cell);
+      (transforms[candidateCount] ??= new THREE.Matrix4()).copy(this.dummy.matrix);
+      candidateCount++;
     }
+    // Pass B — occluders. Every candidate card is a solid slab; an opaque DOM
+    // panel sits in front of the whole scene. The opening/original-film path
+    // stays on its fixed 160-position reference and never culls.
+    const occluding = !fixed && this.occlusionEnabled && candidateCount > 0;
+    if (occluding) {
+      this.occlusion.begin(this.camera, this.container.clientWidth, this.container.clientHeight);
+      for (let k = 0; k < candidateCount; k++)
+        this.occlusion.addBox(this.cardBounds.min, this.cardBounds.max, transforms[k]);
+      if (this.screenOccluders)
+        for (const rect of this.screenOccluders()) this.occlusion.addRect(rect);
+    }
+    // Pass C — compact the draw list; slots every occluder already covers are dropped.
+    this.drawnCells = [];
+    this.relayPoints.clear();
+    this.matrixUpdates ??= new InstanceUpdates(this.instances[0].instanceMatrix);
+    if (this.themeAttribute) this.themeUpdates ??= new InstanceUpdates(this.themeAttribute);
+    let occluded = 0;
+    for (let k = 0; k < candidateCount; k++) {
+      const cell = candidates[k];
+      const matrix = transforms[k];
+      if (occluding && this.occlusion.hidden(this.cardBounds.min, this.cardBounds.max, matrix)) {
+        occluded++;
+        continue;
+      }
+      const i = this.drawnCells.length;
+      this.ensureInstanceCapacity(i + 1);
+      this.drawnCells.push(cell);
+      this.themeUpdates?.scalar(i, this.theme.sample(cell, time));
+      if (play.enabled) this.relayPoints.set(cellKey(cell), { cell: { ...cell }, point: new THREE.Vector3(0, 3.5, 0).applyMatrix4(matrix) });
+      this.matrixUpdates!.set(i * 16, matrix.elements);
+    }
+    this.occlusionStats.candidates = candidateCount;
+    this.occlusionStats.hidden = occluded;
+    this.occlusionStats.occluders = occluding ? this.occlusion.occluders : 0;
     const countChanged = this.instances[0].count !== this.drawnCells.length;
     const matricesChanged = this.matrixUpdates!.commit();
     for (const inst of this.instances) {
@@ -1701,8 +1764,21 @@ export class ArchiveScene {
     // when its actual inputs are identical, including late textures and materials.
     const state = this.renderState;
     this.scene.updateMatrixWorld();
+    // Pass D — extracted and returning meshes leave the frame entirely where
+    // every screen cell they cover is already painted by nearer geometry.
+    this.applyMeshOcclusion(occluding);
     // A changed instance buffer already proves the image changed. Avoid a
     // material/matrix snapshot on those busy frames; capture when it settles.
+    // While a modal is up the canvas is fully blurred away, so neither the
+    // snapshot nor the GPU pass buys anything: the simulation above keeps
+    // running so nothing pops when the backdrop lifts.
+    if (suspendRender && !cinematic) {
+      this.renderSuspended = true;
+      this.suspendedFrames++;
+      return;
+    }
+    const resumed = this.renderSuspended;
+    this.renderSuspended = false;
     if (matricesChanged || cinematic) {
       state.invalidate();
     } else {
@@ -1731,12 +1807,38 @@ export class ArchiveScene {
         if (object instanceof THREE.InstancedMesh)
           state.add(object.count, object.instanceMatrix.version, this.themeAttribute?.version ?? 0);
       });
-      if (!state.end()) { this.reusedFrames++; return; }
+      // One forced draw after a suspended stretch covers changes the snapshot
+      // could not see (resize or quality switch behind the modal).
+      if (!state.end() && !resumed) { this.reusedFrames++; return; }
     }
     this.renderedFrames++;
     this.renderer.shadowMap.needsUpdate = true;
     if (this.superPerformance) this.renderer.render(this.scene, this.camera);
     else this.composer.render();
+  }
+  /**
+   * Mesh-level occlusion for the extracted model and the returning copies.
+   * Runs after the once-per-frame world-matrix update so the test uses this
+   * frame's transforms; the visibility flags then enter the reuse snapshot.
+   */
+  private applyMeshOcclusion(occluding: boolean) {
+    const meshes = this.occludeeMeshes;
+    meshes.length = 0;
+    for (const child of this.model.children)
+      if (child instanceof THREE.Mesh) meshes.push(child);
+    for (const outgoing of this.outgoing)
+      for (const child of outgoing.group.children)
+        if (child instanceof THREE.Mesh) meshes.push(child);
+    let hidden = 0;
+    for (const mesh of meshes) {
+      const geometry = mesh.geometry;
+      if (!geometry.boundingBox) geometry.computeBoundingBox();
+      const box = geometry.boundingBox;
+      const visible = !occluding || !box || !this.occlusion.hidden(box.min, box.max, mesh.matrixWorld);
+      if (mesh.visible !== visible) mesh.visible = visible;
+      if (!visible) hidden++;
+    }
+    this.occlusionStats.meshesHidden = hidden;
   }
   projectCard(x: number, y: number) {
     this.model.updateMatrixWorld(true);
@@ -1775,6 +1877,7 @@ export class ArchiveScene {
       drawCalls: this.renderer.info.render.calls,
       renderedFrames: this.renderedFrames,
       reusedFrames: this.reusedFrames,
+      suspendedFrames: this.suspendedFrames,
       superPerformance: this.superPerformance,
       presentation: this.presence,
       triangles: this.renderer.info.render.triangles,
@@ -1782,7 +1885,7 @@ export class ArchiveScene {
       archiveCandidates: this.cells.length,
       archiveCulled: this.cells.length - this.drawnCells.length,
       archiveCapacity: this.instanceCapacity,
-      archiveCoverage: this.extraCoverage ? "extra" : "standard",
+      occlusion: { ...this.occlusionStats, enabled: this.occlusionEnabled },
       returningFiles: this.outgoing.length,
       selectionPhase: this.pendingPulse
         ? "lifting"

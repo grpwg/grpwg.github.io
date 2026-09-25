@@ -1,0 +1,29 @@
+{
+  "date": "2026-09-25",
+  "method": "built-in browser manual A/B (Playwright unavailable in this environment); screenshots compared with ImageMagick `compare -metric AE -fuzz 3%` on a 800x867 viewport (693600 px)",
+  "archive": {
+    "enabled": { "candidates": 255, "hidden": 124, "occluders": 154, "meshesHidden": 0 },
+    "triangles": { "on": 1289915, "off": 2354827, "reductionPct": 45.2 },
+    "drawCalls": { "on": 48, "off": 48 },
+    "fps": 60,
+    "diff": { "changed": 893, "percent": 0.1288 },
+    "motionFloor": { "changed": 381, "percent": 0.0549 },
+    "manualReview": "user visually confirmed on1/on2/off identical"
+  },
+  "detail": {
+    "enabled": { "candidates": 254, "hidden": 123, "occluders": 154, "meshesHidden": 0 },
+    "triangles": { "on": 1289915, "off": 2183067, "reductionPct": 40.9 },
+    "drawCalls": { "on": 48, "off": 48 },
+    "note": "meshesHidden 0 is expected: the extracted model sits above the array and nothing nearer covers it; array slots behind the opaque detail panel are still culled"
+  },
+  "consoleErrors": [],
+  "artifacts": [
+    "archive-on.png",
+    "archive-on-2.png",
+    "archive-off.png",
+    "detail-on.png",
+    "detail-off.png",
+    "diff-on-off.png",
+    "diff-floor.png"
+  ]
+}

@@ -184,12 +184,6 @@
   margin-top: 18px;
   gap: 14px;
 }
-px;
-  height: 44px;
-  border-color: var(--theme-accent, #c2192a);
-  background: var(--theme-accent, #c2192a);
-  color: #ffffff;
-}
 .player-toggle:hover,
 .episode-player.is-playing .player-toggle {
   background: #a8121f;

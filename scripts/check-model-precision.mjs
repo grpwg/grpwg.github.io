@@ -57,7 +57,7 @@ const location='Rhine model precision diagnostic';
 const control=args=>new Promise((ok,no)=>{const p=spawn(exe,args,{windowsHide:true,stdio:'ignore'});p.once('error',no);p.once('exit',ok);});
 let browser;
 try {
-  if(!host) browser=await require(process.env.PLAYWRIGHT_MODULE||'playwright').chromium.launch({channel:'msedge',headless:true});
+  if(!host) browser=await require(process.env.PLAYWRIGHT_MODULE||'playwright').chromium.launch({...(process.env.REVIEW_CHANNEL?{channel:process.env.REVIEW_CHANNEL}:{}),...(process.env.REVIEW_ARGS?{args:process.env.REVIEW_ARGS.split(",").filter(Boolean)}:{}),headless:true});
   for(const [round,order] of orders.entries())for(tier of order){
     let data;
     console.log('START',host?'host':'browser',round+1,tier);

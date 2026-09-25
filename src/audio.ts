@@ -19,7 +19,7 @@ export type Sound =
   | "inspect"
   | "explode"
   | "assemble";
-export type SoundScene = "boot" | "archive" | "detail" | "viewer";
+export type SoundScene = "boot" | "archive" | "detail";
 export type AudioPreferences = {
   sound: boolean;
   music: boolean;
@@ -62,7 +62,15 @@ const level = (
   now: number,
   seconds = 0.05,
 ) => {
-  param.cancelAndHoldAtTime(now);
+  // Firefox never implemented cancelAndHoldAtTime (bug 1308431). Holding the
+  // computed value first keeps the ramp continuous and behaviour identical;
+  // since Firefox 69 AudioParam.value already includes running automation.
+  if (typeof param.cancelAndHoldAtTime === "function")
+    param.cancelAndHoldAtTime(now);
+  else {
+    param.cancelScheduledValues(now);
+    param.setValueAtTime(param.value, now);
+  }
   param.linearRampToValueAtTime(value, now + seconds);
 };
 export const BOOT_CUES: readonly { time: number; sound: Sound }[] = [
@@ -332,12 +340,6 @@ export class TerminalAudio {
   private bootMix = -1;
   private playedKeys = 0;
   private entryPending = false;
-  private hostPaused = false;
-  setHostPaused(paused: boolean) {
-    this.hostPaused = paused;
-    if (paused) this.hide();
-    else this.visibility();
-  }
   constructor() {
     document.addEventListener("pointerdown", this.gesture, { capture: true });
     document.addEventListener("keydown", this.gesture, { capture: true });
@@ -453,7 +455,6 @@ export class TerminalAudio {
   private async activate() {
     if (
       this.disposed ||
-      this.hostPaused ||
       document.hidden ||
       !this.unlocked ||
       (!this.prefs.sound && !this.prefs.music)
@@ -496,7 +497,6 @@ export class TerminalAudio {
       !c ||
       c.state !== "running" ||
       !this.buffers ||
-      this.hostPaused ||
       this.tracks.length ||
       !this.prefs.music ||
       this.disposed ||
@@ -562,7 +562,6 @@ export class TerminalAudio {
       boot: [0.48, 0.32, 0.18],
       archive: [0.9, 0.72, 0.65],
       detail: [0.72, 0.36, 0.12],
-      viewer: [0.8, 0.24, 0.28],
     }[this.scene];
     this.stemGains.forEach((g, i) =>
       level(g.gain, gains[i], this.context!.currentTime, 1.1),
@@ -572,7 +571,6 @@ export class TerminalAudio {
     const c = this.context;
     if (
       !this.prefs.sound ||
-      this.hostPaused ||
       !c ||
       c.state !== "running" ||
       document.hidden ||

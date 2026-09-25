@@ -18,10 +18,9 @@ const baselineCommit=execFileSync('git',['rev-parse',baselineRef],{encoding:'utf
 console.log('Performance baseline:',baselineCommit);
 await mkdir('.tools/performance',{recursive:true});
 await writeFile('.tools/performance/baseline.json',JSON.stringify({baselineCommit},null,2));
-await writeFile('.tools/performance/hud-baseline.ts',execFileSync('git',['show',`${baselineCommit}:src/hud-projection.ts`]));
-const originalFiles=['scene.ts','hud-projection.ts','archive-visibility.ts'];
+const originalFiles=['scene.ts','archive-visibility.ts'];
 const baseline=label==='baseline'?{name:'performance-baseline',enforce:'pre',load(id){
  const name=originalFiles.find(name=>id.replaceAll('\\','/').endsWith('/src/'+name));
  if(name)return execFileSync('git',['show',`${baselineCommit}:src/${name}`],{encoding:'utf8'});
 }}:null;
-await build({plugins:baseline?[baseline]:[],build:{outDir:`release/performance-${label}`,rollupOptions:{input:{benchmark:'reference/performance.html',hud:'reference/hud-performance.html',app:'index.html'}}}});
+await build({plugins:baseline?[baseline]:[],build:{outDir:`release/performance-${label}`,rollupOptions:{input:{benchmark:'reference/performance.html',app:'index.html'}}}});

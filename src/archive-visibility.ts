@@ -11,9 +11,9 @@ export class ArchiveVisibility {
   candidates = 0;
   private previous: number[] = [];
   private cachedCells: ArchiveCell[] = [];
-  update(source: THREE.PerspectiveCamera, far: number, trackX: number, trackZ: number, extra: boolean): ArchiveCell[] {
+  update(source: THREE.PerspectiveCamera, far: number, trackX: number, trackZ: number): ArchiveCell[] {
     const inputs = [...source.projectionMatrix.elements, ...source.matrixWorldInverse.elements,
-      source.near, source.far, far, trackX, trackZ, Number(extra)];
+      source.near, source.far, far, trackX, trackZ];
     if (inputs.every((value, i) => value === this.previous[i])) return this.cachedCells;
     this.previous = inputs;
     this.camera.copy(source, false);
@@ -21,7 +21,7 @@ export class ArchiveVisibility {
     this.camera.updateProjectionMatrix();
     // Screen-space overscan plus the complete card bounds keep silhouettes and
     // off-screen shadow casters alive before they reach an edge.
-    const margin = extra ? 1.5 : 1.18;
+    const margin = 1.18;
     this.camera.projectionMatrix.elements[0] /= margin;
     this.camera.projectionMatrix.elements[5] /= margin;
     this.camera.projectionMatrixInverse.copy(this.camera.projectionMatrix).invert();

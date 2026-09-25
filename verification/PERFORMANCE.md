@@ -66,9 +66,9 @@
 - `check-render-updates.mjs`：实际 Float32 更新范围、尚未提交的区间、纹理与对象变化、显式失效，以及长期运行中超过 2²⁴ 的版本计数。
 - `check-performance-invalidation.mjs`：稳定画面、改尺寸、配色、选档、延迟纹理、AO/景深通道切换、SMAA、3D 退场反向、音乐恢复、实例容量扩展后的共享缓冲。
 - `check-archive-diagonal.mjs`：桌面、手机竖屏与横屏上的投影轨道、自由拖动、转向。结果见 `performance/runtime/diagonal.json`。
-- `check-three-release.mjs`：退场反向、实际上下文释放、零三维画布、图片背景、重新创建上下文、减少动态效果、查看器释放与详情恢复。结果见 `performance/runtime/three-release.json`。
-- `check-boot-hud.mjs`：五个开场区域、曲面关闭／静态／追踪、减少动态效果、阶段切换、超宽屏。结果见 `performance/runtime/boot-hud.json`。
-- 既有覆盖范围、画质迁移、运动规则与内容检查通过；TypeScript、网页生产构建、Wallpaper Engine 构建通过。
+- `check-three-release.mjs`：退场反向、实际上下文释放、零三维画布、图片背景、重新创建上下文、减少动态效果、查看器释放与详情恢复。结果见 `performance/runtime/three-release.json`。该脚本已于 2026-09-24 随 Wallpaper Engine 支持删除，结果文件保留为历史记录。
+- `check-boot-hud.mjs`：五个开场区域、曲面关闭／静态／追踪、减少动态效果、阶段切换、超宽屏。结果见 `performance/runtime/boot-hud.json`。该脚本已于 2026-09-24 随 Wallpaper Engine 支持删除，结果文件保留为历史记录。
+- 既有覆盖范围、画质迁移、运动规则与内容检查通过；TypeScript、网页生产构建通过。壁纸构建已于 2026-09-24 移除。
 
 当前机器未安装 Playwright WebKit 运行时，本轮没有真实 iPhone/Safari 或其他 GPU 的验证；不能把 Chromium 的手机视口测试称为 iPhone 实机结果。
 
@@ -92,7 +92,6 @@ node scripts/summarize-performance.mjs
 # 另一个终端启动测试服务器后运行缓存与 HUD 回归。
 node scripts/serve-performance.mjs release/performance-candidate 5194
 node scripts/check-performance-invalidation.mjs
-node scripts/check-hud-performance.mjs
 node --experimental-strip-types scripts/check-render-updates.mjs
 ```
 

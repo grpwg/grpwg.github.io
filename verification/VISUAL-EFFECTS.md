@@ -1,5 +1,7 @@
 # 壁纸 UI 曲面与全局画面质感
 
+> **历史记录（2026-09-24）**：Wallpaper Engine 支持已移除，本文的曲面视差、全局色散／颗粒／暗角、`src/wallpaper-effects.ts`、`src/screen-finish.ts`、`scripts/check-visual-effects.mjs` 与 `reference/visual-effects-review.html` 已删除，内容仅作追溯参考；网页端不套用全局屏幕滤镜。
+
 2026-09-10。用户提供三张标注截图，要求重新查看本机创意工坊 3088099655；UI 单独产生空间视差，色散、颗粒、暗角处理全局。
 
 ## 参考结构与本次修正

@@ -1,5 +1,7 @@
 # 开场 HUD
 
+> **历史记录（2026-09-24）**：Wallpaper Engine 支持已移除，本文的 HUD 开关、`src/hud-projection.ts`、`scripts/check-boot-hud.mjs`、`scripts/check-hud-performance.mjs` 与 `reference/hud-performance.html` 已删除，内容仅作追溯参考；网页开场时间轴见 `verification/BOOT-MOTION.md`。
+
 2026-09-11：按用户要求，既有 HUD 开关覆盖开场 UI。
 
 - 接入 ACCESS、Logo、验证文字、扫描圆环与欢迎画面；品牌及 Powered 共用既有投影。

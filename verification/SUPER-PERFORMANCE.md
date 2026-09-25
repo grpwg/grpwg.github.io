@@ -6,7 +6,7 @@
 
 ## 实际页面验证
 
-通过 scripts/check-super-performance.mjs，在 Edge headless、1920×1080、DPR 1 运行。GPU 报告为 NVIDIA GeForce RTX 5070 Ti Laptop GPU / ANGLE D3D11。这不是低配实机或 Wallpaper Engine 宿主帧率测试。
+原通过 `scripts/check-super-performance.mjs` 在 Edge headless、1920×1080、DPR 1 运行。该脚本随 Wallpaper Engine 支持于 2026-09-24 删除，网页等效断言现由 `scripts/check-web-integration.mjs` 覆盖（性能模式开关、刷新恢复、画质恢复）。GPU 报告为 NVIDIA GeForce RTX 5070 Ti Laptop GPU / ANGLE D3D11。这不是低配实机或 Wallpaper Engine 宿主帧率测试。
 
 | 项目 | 原始 | 超级性能 |
 | --- | ---: | ---: |

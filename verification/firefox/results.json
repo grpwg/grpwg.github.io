@@ -1,0 +1,39 @@
+{
+  "userAgent": "Mozilla/5.0 (X11; Linux x86_64; rv:155.0) Gecko/20100101 Firefox/155.0",
+  "webgl": {
+    "version": "WebGL 2.0",
+    "webgl2": true
+  },
+  "startup": "started",
+  "archive": {
+    "drawCalls": 48,
+    "archiveCount": 318,
+    "fps": 14
+  },
+  "pwaGuidance": "本浏览器不提供一键安装；离线资源已就绪，收藏本站即可离线浏览。",
+  "renderQuality": {
+    "ratio": 0.8333333333333335,
+    "width": 1600,
+    "height": 900,
+    "limited": false,
+    "antialias": "off",
+    "transmission": 1,
+    "anisotropy": 16,
+    "superPerformance": false,
+    "aoSamples": 32,
+    "aoWidth": 1600,
+    "aoHeight": 900,
+    "shadows": 2048,
+    "depthOfField": 100
+  },
+  "modal": {
+    "before": 77,
+    "suspendedDuring": -13,
+    "resumed": 43
+  },
+  "wheelChanged": true,
+  "detail": true,
+  "serviceWorker": "active",
+  "errors": [],
+  "consoleErrors": []
+}

@@ -58,6 +58,11 @@ export const qualityPresets = {
   },
 } as const satisfies Record<string, RenderQuality>;
 export type QualityPreset = keyof typeof qualityPresets;
+export const superPerformanceQuality: RenderQuality = {
+  scale: 60, pixelRatio: 1, antialias: "off", shadows: 0, aoSamples: 0,
+  aoResolution: .5, depthOfField: 0, transmission: .25, anisotropy: 2,
+};
+
 export const presetLabels: Record<QualityPreset, string> = {
   performance: "性能",
   original: "原始",

@@ -633,6 +633,8 @@ button {
   color: #6f675b;
   letter-spacing: 1px;
 }
+#clock { display: inline-flex; align-items: baseline; font-variant-numeric: tabular-nums; white-space: nowrap; }
+#clock > span { flex: none; }
 .system-footer {
   position: absolute;
   bottom: 35px;

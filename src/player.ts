@@ -116,8 +116,12 @@ export class EpisodePlayer {
   }
 
   setOpacity(value: number) {
-    this.root.style.opacity = value >= 0.999 ? "" : String(value);
-    this.root.style.pointerEvents = value < 0.1 ? "none" : "";
+    // Written only on change: this runs on every animation frame.
+    const opacity = value >= 0.999 ? "" : String(value);
+    if (this.root.style.opacity !== opacity) this.root.style.opacity = opacity;
+    const pointerEvents = value < 0.1 ? "none" : "";
+    if (this.root.style.pointerEvents !== pointerEvents)
+      this.root.style.pointerEvents = pointerEvents;
   }
 
   setTrack(track: PlayerTrack, autoplay = false) {
