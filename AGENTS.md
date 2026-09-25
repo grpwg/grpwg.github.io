@@ -4,6 +4,7 @@
 
 - 用户于 2026-09-15 授权将正式网站迁到 Cloudflare Pages，保留 `rhine.lubeiluchen.cc`，并明确授权通过浏览器修改阿里云 DNS。项目名为 `rhine-lab-ui`，沿用正式 main 的原生实现与视觉规范。
 - `npm run build:cloudflare` 生成完整静态发行包，校验授权 Novecento 字体并转换缓存规则；字体仍不进入 Git。用户随后授权连接 `LBEILC/RhineLabUI` 的 `main` 自动部署，Pages 输出为 `release/cloudflare/site`；官方项目构建从当前生产网站恢复并校验授权字体。部署与域名记录见 `docs/CLOUDFLARE-DEPLOYMENT.md`。
+- 2026-09-25：用户要求**本分支不再依赖 `rhine.lubeiluchen.cc`**。构建脚本 `scripts/prepare-webfonts.mjs` 不再内置该域名：只在本机缺少授权 kit 且显式设置 `RHINE_WEBFONT_SOURCE` 时从该地址恢复并逐文件校验 SHA-256，未设置则提示安装本机 kit（打包脚本仍在缺少字体时中止）；运行时不引用任何绝对域名。线上入口为本仓库的 GitHub Pages `https://grpwg.github.io/`；`LBEILC/RhineLabUI` 与 Cloudflare Pages（项目 `rhine-lab-ui`）的记录仅作历史，本分支不再跟随该分支。
 
 - 2026-09-11：官网已独立集成 Novecento 开场字体；授权 kit 不进入 Git。正式 Vercel 项目在构建时从当前生产版本恢复并校验字体，首次部署使用本机授权 kit 的静态输出。见 verification/WEBFONT-DEPLOYMENT.md。
 
@@ -168,7 +169,7 @@
 
 ## PWA 与线上入口
 
-- 用户要求增加 PWA，以便 iPhone 从主屏幕进入独立窗口；沿用现有 Vercel 项目与正式域名 https://rhine.lubeiluchen.cc/，README 保留在线入口。
+- 用户要求增加 PWA，以便 iPhone 从主屏幕进入独立窗口；线上入口为本仓库 GitHub Pages 的 https://grpwg.github.io/（2026-09-25 起不再依赖 `rhine.lubeiluchen.cc`），README 保留在线入口。
 - 正式构建缓存完整资源版本，更新下载失败时保留旧版。新版本准备好后由用户在设置中更新并重启，不中断当前浏览；保留收藏和偏好。
 - 开发模式不注册 Service Worker。图标复用项目共享品牌路径；主屏幕安装、离线与更新说明见 `docs/PWA.md`，验证见 `verification/RESPONSIVE.md`。
 - 针对 Win11 Chrome / Edge 的反馈，设置图标保留可见“设置”文字，新版本提供可直接点击的更新入口；`update.html` 从网络获取，用于旧版页面无法找到更新按钮时恢复，不清除收藏或偏好。

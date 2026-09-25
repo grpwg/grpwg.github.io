@@ -1,6 +1,6 @@
 # 主屏幕安装与离线使用
 
-正式地址：[rhine.lubeiluchen.cc](https://rhine.lubeiluchen.cc/)。
+线上地址：[grpwg.github.io](https://grpwg.github.io/)（2026-09-25 起本分支不再依赖 `rhine.lubeiluchen.cc`）。
 
 ## iPhone / iPad
 
@@ -22,7 +22,7 @@
 
 新版本会在后台下载完整资源，准备好后在页面底部提供“更新并重启”，也可从右上角“设置”中更新。更新不会清除收藏与偏好。下载失败时继续使用上一个完整离线版本，联网后重试即可。
 
-如果旧版只有提示、找不到更新入口，请打开[更新终端](https://rhine.lubeiluchen.cc/update.html)，点击“更新并返回”。这个入口从网络获取，不经过旧版本的页面缓存；应用完整新版后返回终端。普通“清除缓存”不一定清除 Service Worker 的离线副本，无需清空网站数据或收藏。
+如果旧版只有提示、找不到更新入口，请打开[更新终端](https://grpwg.github.io/update.html)，点击“更新并返回”。这个入口从网络获取，不经过旧版本的页面缓存；应用完整新版后返回终端。普通“清除缓存”不一定清除 Service Worker 的离线副本，无需清空网站数据或收藏。
 
 ## 开机动画与选档动效
 

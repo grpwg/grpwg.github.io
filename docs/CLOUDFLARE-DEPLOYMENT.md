@@ -1,5 +1,7 @@
 # Cloudflare Pages 部署
 
+> 2026-09-25 起：**本分支不再依赖 `rhine.lubeiluchen.cc`**，也不再跟随 `LBEILC/RhineLabUI`。本文件保留迁移与域名配置的历史记录；文中「从当前正式网站恢复字体」已改为**可选**——只有设置 `RHINE_WEBFONT_SOURCE` 时才从该地址恢复授权 Novecento 字体，未设置则使用本机 kit（`scripts/prepare-webfonts.mjs`）。本分支的线上入口是 GitHub Pages `https://grpwg.github.io/`。
+
 ## Git 自动部署
 
 生产仓库为 `LBEILC/RhineLabUI`，分支 `main`，构建命令 `npm run build:cloudflare`，输出目录 `release/cloudflare/site`，根目录为仓库根目录。Pages 注入 `CF_PAGES=1` 时打包到固定输出目录；本机构建继续使用版本号目录。

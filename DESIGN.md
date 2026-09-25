@@ -233,7 +233,7 @@ Logo 改用共享贝塞尔轮廓的连续路径，绘制首尾独立变速。加
 
 ## 2026-09-09 · 主屏幕与离线
 
-正式域名为 https://rhine.lubeiluchen.cc/，沿用 Vercel 部署。PWA 使用 standalone 窗口、浅暖色主题与共享莱茵生命图标，iPhone 使用 180 px Apple Touch Icon，其他设备提供 192 / 512 px 和 maskable 图标。状态栏、底部手势和横屏刘海通过安全区域留白处理。
+线上入口为本仓库的 GitHub Pages https://grpwg.github.io/（2026-09-25 起本分支不再依赖 `rhine.lubeiluchen.cc`）。PWA 使用 standalone 窗口、浅暖色主题与共享莱茵生命图标，iPhone 使用 180 px Apple Touch Icon，其他设备提供 192 / 512 px 和 maskable 图标。状态栏、底部手势和横屏刘海通过安全区域留白处理。
 
 安装与离线状态集中在设置中。首次联网准备完整资源，当前约 34 MiB，包含字体、模型、声音和 40 份档案；HTML 与资源使用同一个内容版本。下载成功后新版本进入等待状态，用户选择“更新并重启”后应用。下载失败保留完整旧版本，收藏和偏好不随资源更新清除。字体完整分包比此前整包略大，但网页进入前实际只加载约 415 KiB 字体。见 `docs/PWA.md` 与 `verification/STARTUP-LOADING.md`。
 
