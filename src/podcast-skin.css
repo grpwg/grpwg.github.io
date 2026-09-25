@@ -498,7 +498,12 @@
 [data-layout="portrait"] .archive-callout {
   left: var(--edge);
   right: var(--edge);
-  top: 52%;
+  /* Bottom-anchored with auto height: the block grows upward from the player
+     bar instead of being stretched between top and bottom. On short phones the
+     stretched box was far shorter than its content, so the "播放本期" CTA
+     overflowed under the player bar and lost its clicks. */
+  top: auto;
+  bottom: 205px;
   width: auto;
   padding: 0;
   background: none;
