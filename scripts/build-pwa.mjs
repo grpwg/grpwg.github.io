@@ -4,7 +4,7 @@ import { resolve } from "node:path";
 const root=resolve('dist');
 const all=await readdir(root,{recursive:true});
 const files=all.map(path=>path.replaceAll('\\','/')).filter(path=>
-  path==='index.html'||path==='manifest.webmanifest'||path==='favicon.svg'||
+  path==='index.html'||path==='manifest.webmanifest'||
   /^(assets|icons|episodes|covers|licenses)\/[^/]+\.[^/]+$/.test(path)||
   /^fonts\/.*\.(woff2|pdf|txt|json|md)$/.test(path)||
   /^audio\/(atmosphere|motif|pulse)\.ogg$/.test(path)
