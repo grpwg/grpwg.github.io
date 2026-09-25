@@ -1,6 +1,6 @@
 # 主屏幕安装与离线使用
 
-线上地址：[grpwg.github.io](https://grpwg.github.io/)（2026-09-25 起本分支不再依赖 `rhine.lubeiluchen.cc`）。
+线上地址：[grpwg.github.io](https://grpwg.github.io/)。
 
 ## iPhone / iPad
 
@@ -30,9 +30,9 @@
 
 需要完整动效时，打开右上角圆形图标下标有“设置”的按钮，选择“启用完整动效并重播”。这只调整本站，无需修改系统设置。减少动态效果开关也可随时重新开启。
 
-## 开发与 Vercel
+## 开发与部署
 
-`npm run build` 生成静态站点和带内容版本号的 Service Worker，输出在 `dist`。现有 Vercel 项目沿用 GitHub 自动部署，配置见 `vercel.json`。Service Worker、manifest 与构建清单使用重新验证缓存头。离线功能只在正式构建的 HTTPS 或 localhost 环境注册，`npm run dev` 不注册。
+`npm run build` 生成静态站点和带内容版本号的 Service Worker，输出在 `dist`。部署走本仓库的 GitHub Pages（`main` 推送自动构建）。Service Worker、manifest 与构建清单使用重新验证缓存头。离线功能只在正式构建的 HTTPS 或 localhost 环境注册，`npm run dev` 不注册。
 
 本地验证：运行 `npm run build`，再运行 `npm run preview`。浏览器测试见 `scripts/check-pwa.mjs`，需要本机可用的 Playwright 与 Chrome；可通过 `PLAYWRIGHT_MODULE` 指定已有 Playwright 模块路径。
 
