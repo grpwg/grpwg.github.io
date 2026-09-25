@@ -9,6 +9,8 @@ export class ArchiveVisibility {
   private matrix = new THREE.Matrix4();
   private box = new THREE.Box3();
   candidates = 0;
+  /** Content of the last cell set: lets a consumer's fingerprint agree with this cache. */
+  key = '';
   private previous: number[] = [];
   private cachedCells: ArchiveCell[] = [];
   update(source: THREE.PerspectiveCamera, far: number, trackX: number, trackZ: number): ArchiveCell[] {
@@ -38,7 +40,7 @@ export class ArchiveVisibility {
       const t=(y-start.y)/dy;
       if(t>=0&&t<=1)slab.expandByPoint(start.clone().lerp(end,t));
     }
-    if(slab.isEmpty()) { this.candidates=0; return this.cachedCells = []; }
+    if(slab.isEmpty()) { this.candidates=0; this.key=''; return this.cachedCells = []; }
     const minLane=Math.floor((slab.min.x-2.8+trackX)/COLUMN_SPACING+2)-1;
     const maxLane=Math.ceil((slab.max.x+2.8+trackX)/COLUMN_SPACING+2)+1;
     const minRow=Math.floor((slab.min.z-.6-trackZ)/ROW_SPACING+15.5)-2;
@@ -51,6 +53,7 @@ export class ArchiveVisibility {
       if(this.frustum.intersectsBox(this.box))cells.push({lane,row});
     }
     this.candidates=cells.length;
+    this.key=cells.map(cell=>`${cell.lane},${cell.row}`).join(';');
     return this.cachedCells = cells;
   }
   intersects(x: number, y: number, z: number) {

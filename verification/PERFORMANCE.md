@@ -61,10 +61,45 @@
 
 完整截图在本机 `verification/performance/`；Git 保存代表性对照图、原始数值、比较报告和完整图片哈希清单 `performance/image-manifest.json`，避免把每次中间运行的截图全部加入仓库。
 
+## 跨帧阴影缓存、亚像素细节 LOD 与实例复用（2026-09-25）
+
+用户参考半条命 2（Source 引擎）的渲染裁剪方法，要求继续优化低配机器、笔记本与手机 Chrome 的卡顿；红线放宽为允许亚像素细节 LOD（<1 设备像素的小螺丝不画），其余保持不降分辨率、不关阴影/AO/景深、不改材质与后处理。
+
+1. **A 跨帧阴影缓存**（`shadowCache`）：每帧汇总投射者输入指纹——投射链可见性、世界矩阵、几何 id、实例矩阵版本，加上光源位置/目标与阴影相机、mapSize、bias 配置——相同则复用上一帧的阴影深度图。上下文恢复、`setQuality` 使 `shadowInput=null` 强制重绘；模态挂起帧同样计算哈希，避免恢复后多渲染一次阴影。
+2. **B 亚像素细节 LOD**（`detailLod`）：离线分析 GLB 连通域得到特征尺寸（fasteners 最大连通块 0.114→记 0.15、inlay 用 bbox 最大边，共用 `detailFeature=max`，因「全部亚像素 ⇔ 最大者亚像素」）。全量帧按每实例距离把「0.25 单位特征 <1 设备像素」的实例移出细节批次（count=full 前缀）。**实测在所有现实视口下休眠**：1600×900 最小投影 26.3px，超性能 60% 缩放与手机视口也 ≥8px——长焦（fov≈4.7°）加卡片约 136 单位距离使螺丝永不亚像素；放宽阈值到约 16px 才会剔到可见螺丝，违反画质红线，故不做。用户确认保留为休眠守卫。
+3. **C 实例 pass 复用指纹**（`instanceReuse`）：Pass A/B/C 的全部输入分六段指纹（discrete / floats / time / maps / camera / cells），全部一致则整帧跳过候选构建、遮挡建格与实例提交；复用帧用 `theme.sample` 遍历 `drawnCells` 补齐 `theme.latest`，保证后续主题切换连续。浮点输入用 float32（实例缓冲自身精度）量化到真实终态，衰减项按有限阈值归零（scanBlend、idleGain、脉冲包络）；脉冲在阵列中 `pulseGain` 常驻 1，只有存活涟漪才入 time；可见格集内容以 `ArchiveVisibility.key` 入指纹，与其 f64 精确再键保持一致，良性噪声下内容不变、真实边界穿越强制全量。`theme.animating()` 以 `age>=0` 排除初始 `start=-10`。
+
+三个 URL 开关 `?no-shadow-cache`、`?no-detail-lod`、`?no-instance-reuse` 用于 A/B，均为默认开启。
+
+### 验证
+
+`npm run check:frame-caching`（外部 Playwright，环境变量见下）。1600×900、reduced、无音乐设置，稳定窗口用轮询判据（`renderedFrames` 冻结 800ms 且 `drift=[]`）而非固定等待：相机 rate-5 缓动收敛到 float32 精确约需 7 秒且随运行历史漂移。
+
+| 状态 | 默认构建 | 三开关全关 |
+| --- | ---: | ---: |
+| 静止阵列帧循环 | 73/73 复用、阴影 0 次重绘 | 复用 0、逐帧全量 |
+| 详情阅读 | 84/84 复用、阴影 0 次 | 复用 0 |
+| 主题波结束后 | 72/72 复用（复用恢复） | 复用 0 |
+| 选中动作 | 渲染 65 帧 / 阴影 62 帧 | 渲染 67 / 阴影 67 |
+
+- 同状态 ON/OFF 截图像素差：archive 60px、select 0px、detail 0px、dark 74px，均低于 400px 预算（同状态运动噪声地板 0–60px）。
+- 交互回归：选中重绘 42,636px、主题重着色 1,433,606px、遮挡剔除 149 格、`detailCulled=0`（B 休眠的直接证据）、零页面/着色器错误。
+- 选中窗口内 `shadow(62) < rendered(65)` 证明缓存跳过卡片停稳后的相机尾巴帧；关闭缓存则 `shadow === rendered` 每帧必绘。
+- 既有回归：`check:occlusion`（视觉中性 4733px ≤ 5781px 预算、三角形 on<off）、`check:content`、`check:viewport` 全部通过。
+- 证据：`verification/frame-caching/results.json` 与代表性截图。
+
+```bash
+# 复现（外部 Playwright 安装，不进仓库）
+PLAYWRIGHT_MODULE=<playwright 模块> PLAYWRIGHT_BROWSERS_PATH=<浏览器目录> \
+REVIEW_CHANNEL=chromium REVIEW_ARGS=--use-gl=angle,--use-angle=vulkan,--enable-gpu,--ignore-gpu-blocklist,--enable-features=Vulkan \
+REVIEW_URL=http://127.0.0.1:4173 npm run check:frame-caching
+```
+
 ## 运行时回归
 
 - `check-render-updates.mjs`：实际 Float32 更新范围、尚未提交的区间、纹理与对象变化、显式失效，以及长期运行中超过 2²⁴ 的版本计数。
 - `check-performance-invalidation.mjs`：稳定画面、改尺寸、配色、选档、延迟纹理、AO/景深通道切换、SMAA、3D 退场反向、音乐恢复、实例容量扩展后的共享缓冲。
+- `check-frame-caching.mjs`：跨帧阴影缓存、实例 pass 复用指纹与亚像素细节 LOD 的开关 A/B、计数器断言、同状态截图像素差与交互回归。结果见 `frame-caching/results.json`。
 - `check-archive-diagonal.mjs`：桌面、手机竖屏与横屏上的投影轨道、自由拖动、转向。结果见 `performance/runtime/diagonal.json`。
 - `check-three-release.mjs`：退场反向、实际上下文释放、零三维画布、图片背景、重新创建上下文、减少动态效果、查看器释放与详情恢复。结果见 `performance/runtime/three-release.json`。该脚本已于 2026-09-24 随 Wallpaper Engine 支持删除，结果文件保留为历史记录。
 - `check-boot-hud.mjs`：五个开场区域、曲面关闭／静态／追踪、减少动态效果、阶段切换、超宽屏。结果见 `performance/runtime/boot-hud.json`。该脚本已于 2026-09-24 随 Wallpaper Engine 支持删除，结果文件保留为历史记录。

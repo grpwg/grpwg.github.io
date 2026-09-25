@@ -21,5 +21,7 @@ export class RenderState {
     this.changed = false;
     return changed;
   }
+  /** The current frame's values as a comparable key (shadow cache re-keying). */
+  key() { return this.values.slice(0, this.cursor).join(","); }
   invalidate() { this.changed = true; }
 }

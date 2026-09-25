@@ -1056,6 +1056,9 @@ async function start() {
   try {
     scene = new ArchiveScene($("#three-scene"));
     scene.occlusionEnabled = !reviewParams.has("no-occlusion");
+    scene.shadowCache = !reviewParams.has("no-shadow-cache");
+    scene.detailLod = !reviewParams.has("no-detail-lod");
+    scene.instanceReuse = !reviewParams.has("no-instance-reuse");
     scene.screenOccluders = opaquePanelRects;
     scene.setTheme(prefs.colorTheme === "dark", true);
     await Promise.all([

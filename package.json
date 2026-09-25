@@ -13,6 +13,7 @@
     "check:viewport": "node --experimental-strip-types scripts/check-viewport.mjs",
     "check:firefox": "node scripts/check-firefox.mjs",
     "check:occlusion": "node scripts/check-occlusion.mjs",
+    "check:frame-caching": "node scripts/check-frame-caching.mjs",
     "review:mobile": "node scripts/serve-mobile-review.mjs",
     "export:feed": "node scripts/fetch-feed.mjs",
     "build": "tsc && vite build && node scripts/build-pwa.mjs",

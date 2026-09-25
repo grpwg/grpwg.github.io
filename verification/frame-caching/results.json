@@ -1,0 +1,136 @@
+{
+  "on": {
+    "archive": {
+      "frames": 73,
+      "rendered": 0,
+      "reusedSnapshots": 73,
+      "shadow": 0,
+      "reused": 73
+    },
+    "archiveCount": 168,
+    "occluded": 149,
+    "floor": {
+      "changed": 0,
+      "total": 1440000,
+      "max": 0
+    },
+    "select": {
+      "frames": 260,
+      "rendered": 65,
+      "reusedSnapshots": 195,
+      "shadow": 62,
+      "reused": 71,
+      "count": 168
+    },
+    "selectChanged": {
+      "changed": 42636,
+      "total": 1440000,
+      "max": 232
+    },
+    "detail": {
+      "frames": 84,
+      "rendered": 0,
+      "reusedSnapshots": 84,
+      "shadow": 0,
+      "reused": 84
+    },
+    "afterTheme": {
+      "frames": 72,
+      "rendered": 0,
+      "reusedSnapshots": 72,
+      "shadow": 0,
+      "reused": 72
+    },
+    "darkChanged": {
+      "changed": 1433606,
+      "total": 1440000,
+      "max": 224
+    },
+    "detailCulled": 0,
+    "lod": {
+      "minFeaturePx": 26.262771715939266,
+      "maxFeaturePx": 35.92377686596771,
+      "bufferHeight": 720,
+      "fieldOfView": 4.692446223172938
+    }
+  },
+  "off": {
+    "archive": {
+      "frames": 72,
+      "rendered": 0,
+      "reusedSnapshots": 72,
+      "shadow": 0,
+      "reused": 0
+    },
+    "archiveCount": 168,
+    "occluded": 149,
+    "floor": {
+      "changed": 60,
+      "total": 1440000,
+      "max": 30
+    },
+    "select": {
+      "frames": 151,
+      "rendered": 65,
+      "reusedSnapshots": 86,
+      "shadow": 65,
+      "reused": 0,
+      "count": 168
+    },
+    "selectChanged": {
+      "changed": 42696,
+      "total": 1440000,
+      "max": 232
+    },
+    "detail": {
+      "frames": 85,
+      "rendered": 0,
+      "reusedSnapshots": 85,
+      "shadow": 0,
+      "reused": 0
+    },
+    "afterTheme": {
+      "frames": 72,
+      "rendered": 0,
+      "reusedSnapshots": 72,
+      "shadow": 0,
+      "reused": 0
+    },
+    "darkChanged": {
+      "changed": 1433607,
+      "total": 1440000,
+      "max": 224
+    },
+    "detailCulled": 0,
+    "lod": {
+      "minFeaturePx": 26.262771715939266,
+      "maxFeaturePx": 35.92377686596771,
+      "bufferHeight": 720,
+      "fieldOfView": 4.692446223172938
+    }
+  },
+  "parity": {
+    "archive": {
+      "changed": 60,
+      "total": 1440000,
+      "max": 30
+    },
+    "select": {
+      "changed": 0,
+      "total": 1440000,
+      "max": 6
+    },
+    "detail": {
+      "changed": 75,
+      "total": 1440000,
+      "max": 183
+    },
+    "dark": {
+      "changed": 74,
+      "total": 1440000,
+      "max": 55
+    }
+  },
+  "errors": [],
+  "budget": 400
+}

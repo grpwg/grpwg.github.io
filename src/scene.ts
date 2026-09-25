@@ -128,6 +128,12 @@ export class ArchiveScene {
   private relayActive = false;
   /** Camera-space culling: solid cards and opaque overlays drop what they cover. */
   occlusionEnabled = true;
+  /** Re-render the shadow depth map only when a caster, its visibility or the light changed. */
+  shadowCache = true;
+  /** Drop detail parts (fasteners, index inlay) that project below one device pixel. */
+  detailLod = true;
+  /** Skip the instance candidate/occlusion/draw passes while every input is unchanged. */
+  instanceReuse = true;
   /** Opaque overlay rectangles in CSS pixels, supplied by the page. */
   screenOccluders?: () => ScreenRect[];
   private occlusion = new OcclusionGrid();
@@ -180,6 +186,31 @@ export class ArchiveScene {
   private matrixUpdates?: InstanceUpdates;
   private themeUpdates?: InstanceUpdates;
   private renderState = new RenderState();
+  private shadowState = new RenderState();
+  private shadowInput: string | null = null;
+  /** Segmented instance fingerprint: each group compares on its own so stats
+   * can report which inputs invalidated the last full pass. */
+  private fpStates = {
+    /** Flags, sizes, selection, theme target and DOM overlay rectangles. */
+    discrete: new RenderState(),
+    /** Damped scene values quantized to instance-buffer (float32) precision. */
+    floats: new RenderState(),
+    /** Time itself: only while a time-shaped term (breath, scan, ripple…) is alive. */
+    time: new RenderState(),
+    /** Pulses, hover/relay lifts and outgoing copies. */
+    maps: new RenderState(),
+    /** Camera, fog and rails feeding Passes A–B. */
+    camera: new RenderState(),
+    /** The visible cell set content (visibility's re-keyed cache). */
+    cells: new RenderState(),
+  };
+  private fpDrift: string[] = [];
+  private shadowRenders = 0;
+  private instanceReused = 0;
+  private detailCulled = 0;
+  private detailFeature = 0;
+  private lodFull: number[] = [];
+  private lodSmall: number[] = [];
   private renderedFrames = 0;
   private reusedFrames = 0;
   private visibility = new ArchiveVisibility();
@@ -281,7 +312,11 @@ export class ArchiveScene {
       "三维节目阵列，点击选择，左右拖动切栏，上下拖动或滚轮切换栏内节目",
     );
     container.appendChild(this.renderer.domElement);
-    this.renderer.domElement.addEventListener('webglcontextrestored', () => this.renderState.invalidate(), { signal: this.inputEvents.signal });
+    this.renderer.domElement.addEventListener('webglcontextrestored', () => {
+      this.renderState.invalidate();
+      // The restored context keeps no depth map: re-render shadows once.
+      this.shadowInput = null;
+    }, { signal: this.inputEvents.signal });
     this.scene.background = new THREE.Color("#eae5e1");
     // The frame updates world matrices once after simulation; subsequent
     // beauty, normal, depth and transmission renders reuse those same matrices.
@@ -484,8 +519,32 @@ export class ArchiveScene {
       inst.castShadow = name === "Optical_Diffuser";
       inst.receiveShadow = true;
       inst.frustumCulled = false;
+      // Subpixel detail LOD. Only the corner screws and the index inlay may drop;
+      // silhouette parts and shadow casters never do. The fasteners' largest
+      // connected element measures 0.114 world units (rounded up here) and the
+      // inlay tiles 0.25, so one shared bound over all detail parts stays
+      // conservative: every part is subpixel exactly when the largest is.
+      const feature = name === "Titanium_Fasteners" ? 0.15
+        : name === "Index_Inlay" && geom.boundingBox
+          ? Math.max(
+              geom.boundingBox.max.x - geom.boundingBox.min.x,
+              geom.boundingBox.max.y - geom.boundingBox.min.y,
+              geom.boundingBox.max.z - geom.boundingBox.min.z,
+            )
+          : 0;
+      if (feature) {
+        inst.userData.detail = true;
+        this.detailFeature = Math.max(this.detailFeature, feature);
+      }
       this.instances.push(inst);
       this.scene.add(inst);
+    }
+    // Picking raycasts only instances[0]; keep it a full-detail surface so the
+    // subpixel suffix can never swallow a click.
+    if (this.instances[0]?.userData.detail) {
+      const full = this.instances.findIndex((inst) => !inst.userData.detail);
+      if (full > 0)
+        [this.instances[0], this.instances[full]] = [this.instances[full], this.instances[0]];
     }
     this.labelCanvas.width = 1024;
     this.labelCanvas.height = 440;
@@ -646,6 +705,8 @@ export class ArchiveScene {
       this.light.shadow.mapSize.set(size, size);
     }
     this.light.shadow.needsUpdate = true;
+    // Quality changed the map size or enablement: re-key the shadow cache.
+    this.shadowInput = null;
     applyTextureQuality(this.scene, this.renderer, quality);
     this.resize();
   }
@@ -1654,6 +1715,74 @@ export class ArchiveScene {
       : this.visibility.update(this.camera, fog.far, trackX, entryZ + this.rail.value);
     const hidden = new Set(this.outgoing.map(o => cellKey(o.cell)));
     hidden.add(cellKey(this.selectedCell));
+    // Instance-input fingerprint. Passes A–C are pure functions of these values,
+    // so a settled frame keeps last frame's results verbatim: no candidate
+    // transforms, no occlusion rebuild, no instance uploads. Everything field()
+    // reads is enumerated here; time itself only enters while a time-shaped
+    // term (breathing, scan, ripple, rhythm, theme wave) is still alive.
+    let occluderRects: ScreenRect[] | null = null;
+    let reuseInstances = false;
+    if (this.instanceReuse && !cinematic) {
+      occluderRects = this.screenOccluders ? this.screenOccluders() : null;
+      const inputs = this.fpStates;
+      for (const state of Object.values(inputs)) state.begin();
+      // Damped values are asymptotic in f64; float32 (the instance buffer's own
+      // precision) quantizes them to a real end state, and decaying terms drop
+      // to zero at a finite threshold instead of never reaching it.
+      inputs.discrete.add(
+        Number(fixed), Number(this.occlusionEnabled),
+        this.container.clientWidth, this.container.clientHeight,
+        Number(this.reduced), this.coordinateOrigin.row, this.coordinateOrigin.lane,
+        this.selectedCell.row, this.selectedCell.lane,
+        Number(activePlay), Number(play.enabled), Number(this.deferSelectionPulse),
+        this.theme.target,
+      );
+      if (occluderRects)
+        for (const rect of occluderRects)
+          inputs.discrete.add(rect.left, rect.top, rect.right, rect.bottom);
+      inputs.floats.floats(
+        detail, this.flatMix,
+        this.scanBlend > 1e-6 ? this.scanBlend : 0,
+        this.idleGain > 1e-6 ? this.idleGain : 0,
+        // pulseGain rests at 1 in the array; only live ripples read time.
+        this.pulses.length ? this.pulseGain : 0,
+        this.shoulder.value, this.laneFocus.value, this.presence,
+      );
+      if (
+        this.scanBlend > 1e-6 || this.idleGain > 1e-6 || this.pulses.length > 0 ||
+        activePlay || this.theme.animating(time)
+      ) inputs.time.floats(time, this.scanTime);
+      for (const pulse of this.pulses) inputs.maps.add(pulse.lane, pulse.row, pulse.time);
+      for (const [key, lift] of this.hoverLifts) { inputs.maps.add(key); inputs.maps.floats(lift); }
+      for (const [key, lift] of this.relayLifts) { inputs.maps.add(key); inputs.maps.floats(lift); }
+      for (const copy of this.outgoing) inputs.maps.add(copy.cell.lane, copy.cell.row);
+      // Camera and rail feed Pass A directly and visibility's frustum; float32
+      // matches the instance buffer's own precision, and the cell-set segment
+      // covers visibility's exact f64 re-keying: benign noise keeps the content
+      // identical, a real boundary crossing changes it and forces a full pass.
+      inputs.camera.floats(
+        trackX, entryZ, this.rail.value, fog.far,
+        this.camera.near, this.camera.far,
+        ...this.camera.projectionMatrix.elements, ...this.camera.matrixWorldInverse.elements,
+        ...this.camera.position.toArray(),
+      );
+      inputs.cells.add(this.visibility.key);
+      reuseInstances = true;
+      this.fpDrift = [];
+      for (const [name, state] of Object.entries(inputs))
+        if (state.end()) { reuseInstances = false; this.fpDrift.push(name); }
+    }
+    let occluding = false;
+    let occluded = 0;
+    let countChanged = false;
+    let matricesChanged = false;
+    if (reuseInstances) {
+      // theme.latest was cleared this frame; keep it warm from the draw list so
+      // a later theme switch still has every visible card's current colour.
+      for (const cell of this.drawnCells) this.theme.sample(cell, time);
+      occluding = !fixed && this.occlusionEnabled && this.candidateCells.length > 0;
+      this.instanceReused++;
+    } else {
     // Pass A — candidate slots. Each transform is composed once and shared by
     // the occluder pass and the draw pass, so nothing is transformed twice.
     const candidates = this.candidateCells;
@@ -1679,20 +1808,30 @@ export class ArchiveScene {
     // Pass B — occluders. Every candidate card is a solid slab; an opaque DOM
     // panel sits in front of the whole scene. The opening/original-film path
     // stays on its fixed 160-position reference and never culls.
-    const occluding = !fixed && this.occlusionEnabled && candidateCount > 0;
+    occluding = !fixed && this.occlusionEnabled && candidateCount > 0;
     if (occluding) {
       this.occlusion.begin(this.camera, this.container.clientWidth, this.container.clientHeight);
       for (let k = 0; k < candidateCount; k++)
         this.occlusion.addBox(this.cardBounds.min, this.cardBounds.max, transforms[k]);
-      if (this.screenOccluders)
-        for (const rect of this.screenOccluders()) this.occlusion.addRect(rect);
+      const rects = occluderRects ?? (this.screenOccluders ? this.screenOccluders() : []);
+      for (const rect of rects) this.occlusion.addRect(rect);
     }
-    // Pass C — compact the draw list; slots every occluder already covers are dropped.
+    // Pass C — compact the draw list; slots every occluder already covers are
+    // dropped. Subpixel detail parts partition into a suffix: full-detail
+    // instances draw the prefix, detail batches stop there (verification/
+    // PERFORMANCE.md).
     this.drawnCells = [];
     this.relayPoints.clear();
     this.matrixUpdates ??= new InstanceUpdates(this.instances[0].instanceMatrix);
     if (this.themeAttribute) this.themeUpdates ??= new InstanceUpdates(this.themeAttribute);
-    let occluded = 0;
+    const lodPxScale = this.detailLod && !fixed && this.detailFeature > 0
+      ? this.renderer.domElement.height / (2 * Math.tan(this.camera.fov * Math.PI / 360))
+      : 0;
+    const lodBound = lodPxScale > 0 ? this.detailFeature * lodPxScale : Infinity;
+    const full = this.lodFull;
+    const small = this.lodSmall;
+    full.length = 0;
+    small.length = 0;
     for (let k = 0; k < candidateCount; k++) {
       const cell = candidates[k];
       const matrix = transforms[k];
@@ -1700,25 +1839,39 @@ export class ArchiveScene {
         occluded++;
         continue;
       }
-      const i = this.drawnCells.length;
-      this.ensureInstanceCapacity(i + 1);
-      this.drawnCells.push(cell);
-      this.themeUpdates?.scalar(i, this.theme.sample(cell, time));
-      if (play.enabled) this.relayPoints.set(cellKey(cell), { cell: { ...cell }, point: new THREE.Vector3(0, 3.5, 0).applyMatrix4(matrix) });
-      this.matrixUpdates!.set(i * 16, matrix.elements);
+      const e = matrix.elements;
+      const dx = e[12] - this.camera.position.x;
+      const dy = e[13] - this.camera.position.y;
+      const dz = e[14] - this.camera.position.z;
+      (dx * dx + dy * dy + dz * dz > lodBound * lodBound ? small : full).push(k);
     }
+    for (let pass = 0; pass < 2; pass++) {
+      for (const k of pass ? small : full) {
+        const cell = candidates[k];
+        const matrix = transforms[k];
+        const i = this.drawnCells.length;
+        this.ensureInstanceCapacity(i + 1);
+        this.drawnCells.push(cell);
+        this.themeUpdates?.scalar(i, this.theme.sample(cell, time));
+        if (play.enabled) this.relayPoints.set(cellKey(cell), { cell: { ...cell }, point: new THREE.Vector3(0, 3.5, 0).applyMatrix4(matrix) });
+        this.matrixUpdates!.set(i * 16, matrix.elements);
+      }
+    }
+    this.detailCulled = small.length;
     this.occlusionStats.candidates = candidateCount;
     this.occlusionStats.hidden = occluded;
     this.occlusionStats.occluders = occluding ? this.occlusion.occluders : 0;
-    const countChanged = this.instances[0].count !== this.drawnCells.length;
-    const matricesChanged = this.matrixUpdates!.commit();
+    countChanged = this.instances[0].count !== this.drawnCells.length;
+    matricesChanged = this.matrixUpdates!.commit();
+    const detailDrawn = full.length;
     for (const inst of this.instances) {
-      inst.count = this.drawnCells.length;
+      inst.count = inst.userData.detail ? detailDrawn : this.drawnCells.length;
     }
     // Picking uses only the first instanced surface. The other batches disable
     // renderer culling and do not need an O(n) bound recomputation each frame.
     if (matricesChanged || countChanged || !this.instances[0].boundingSphere) this.instances[0].computeBoundingSphere();
     this.themeUpdates?.commit();
+    }
     let neighborTop = -Infinity;
     const lane = selectedLane,
       row = selectedRow;
@@ -1779,8 +1932,25 @@ export class ArchiveScene {
     }
     const resumed = this.renderSuspended;
     this.renderSuspended = false;
+    // Shadow-input key: casters, their visibility chain, the light and the map
+    // size. Hashed on every path so a busy frame and the frame after it agree
+    // on one key instead of re-rendering the depth map twice.
+    this.shadowState.begin();
+    this.shadowState.add(Number(this.renderer.shadowMap.enabled));
+    this.shadowState.floats(
+      this.light.position.x, this.light.position.y, this.light.position.z,
+      this.light.target.position.x, this.light.target.position.y, this.light.target.position.z,
+      this.light.shadow.mapSize.x, this.light.shadow.mapSize.y,
+      this.light.shadow.bias, this.light.shadow.normalBias,
+      this.light.shadow.camera.left, this.light.shadow.camera.right,
+      this.light.shadow.camera.top, this.light.shadow.camera.bottom,
+      this.light.shadow.camera.near, this.light.shadow.camera.far,
+    );
+    let shadowKey: string;
     if (matricesChanged || cinematic) {
       state.invalidate();
+      this.scene.traverse((object) => this.trackShadowCaster(object));
+      shadowKey = this.shadowState.key();
     } else {
       state.begin();
       state.floats(...this.camera.projectionMatrix.elements, ...this.camera.matrixWorldInverse.elements,
@@ -1789,6 +1959,7 @@ export class ArchiveScene {
         bokehUniforms.focus.value, bokehUniforms.aperture.value);
       this.scene.traverse(object => {
         state.add(object.id, Number(object.visible));
+        this.trackShadowCaster(object);
         if (!(object instanceof THREE.Mesh)) return;
         object.modelViewMatrix.multiplyMatrices(this.camera.matrixWorldInverse, object.matrixWorld);
         object.normalMatrix.getNormalMatrix(object.modelViewMatrix);
@@ -1807,14 +1978,37 @@ export class ArchiveScene {
         if (object instanceof THREE.InstancedMesh)
           state.add(object.count, object.instanceMatrix.version, this.themeAttribute?.version ?? 0);
       });
+      shadowKey = this.shadowState.key();
       // One forced draw after a suspended stretch covers changes the snapshot
       // could not see (resize or quality switch behind the modal).
       if (!state.end() && !resumed) { this.reusedFrames++; return; }
     }
     this.renderedFrames++;
-    this.renderer.shadowMap.needsUpdate = true;
+    // Cross-frame shadow cache: identical caster inputs reuse last frame's
+    // depth map; three resets needsUpdate after every shadow render.
+    if (!this.shadowCache || shadowKey !== this.shadowInput) {
+      this.renderer.shadowMap.needsUpdate = true;
+      this.shadowInput = shadowKey;
+      if (this.renderer.shadowMap.enabled) this.shadowRenders++;
+    }
     if (this.superPerformance) this.renderer.render(this.scene, this.camera);
     else this.composer.render();
+  }
+  /**
+   * One caster's contribution to the shadow-input key: identity, full-chain
+   * visibility, world transform and (for the instanced diffuser) the shared
+   * transform-buffer version.
+   */
+  private trackShadowCaster(object: THREE.Object3D) {
+    if (!object.castShadow) return;
+    let covered = true;
+    for (let node: THREE.Object3D | null = object; node; node = node.parent)
+      if (!node.visible) { covered = false; break; }
+    this.shadowState.add(object.id, Number(covered));
+    this.shadowState.floats(...object.matrixWorld.elements);
+    if (object instanceof THREE.Mesh) this.shadowState.add(object.geometry.id);
+    if (object instanceof THREE.InstancedMesh)
+      this.shadowState.add(object.count, object.instanceMatrix.version);
   }
   /**
    * Mesh-level occlusion for the extracted model and the returning copies.
@@ -1878,6 +2072,16 @@ export class ArchiveScene {
       renderedFrames: this.renderedFrames,
       reusedFrames: this.reusedFrames,
       suspendedFrames: this.suspendedFrames,
+      shadowRenders: this.shadowRenders,
+      instanceReused: this.instanceReused,
+      detailCulled: this.detailCulled,
+      optimization: {
+        shadowCache: this.shadowCache,
+        detailLod: this.detailLod,
+        instanceReuse: this.instanceReuse,
+        /** Input groups that invalidated the last full instance pass. */
+        drift: [...this.fpDrift],
+      },
       superPerformance: this.superPerformance,
       presentation: this.presence,
       triangles: this.renderer.info.render.triangles,

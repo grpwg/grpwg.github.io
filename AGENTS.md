@@ -17,6 +17,7 @@
 - 用户于 2026-09-12 授权新建 `codex/visual-preserving-performance`，从壁纸分支基线 `75f7eac` 逐项实现、验证性能优化，保留现有画质与动效。沿用原生实现流程。
 - 主场景采用同帧阴影和世界矩阵复用、共享实例缓冲及变化区间上传、静止画面复用、AO 与景深同分辨率时共享打包深度；开场 HUD 缓存框体并从原动作计算投影。降低 AO 分辨率时恢复原景深深度通道。
 - 浏览器与实际 Wallpaper Engine 受控测试、视觉精度差异、回归及复现步骤见 `verification/PERFORMANCE.md`。后续添加渲染输入时维护静止复用失效条件，升级 Three.js 时复核共享深度扩展点。
+- 2026-09-25：用户参考半条命 2（Source）方法要求继续优化低配／笔记本／手机 Chrome，红线放宽为允许亚像素细节 LOD。新增 A 跨帧阴影缓存（`shadowCache`，投射者与光源配置指纹不变即复用深度图）、B 亚像素细节 LOD（`detailLod`，0.25 单位特征 <1 设备像素才剔——长焦下永不触发，实测最小 26px，用户确认保留为休眠守卫）、C 实例 pass 复用指纹（`instanceReuse`，discrete/floats/time/maps/camera/cells 六段分组，float32 量化 + 可见格集内容入指纹）。默认全开，`?no-shadow-cache`、`?no-detail-lod`、`?no-instance-reuse` 做 A/B；`npm run check:frame-caching` 验证，详见 `verification/PERFORMANCE.md`。
 
 ## 不可见即不画：写抑制与遮挡剔除（2026-09-24/25）
 

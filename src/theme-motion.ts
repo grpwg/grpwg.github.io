@@ -19,6 +19,8 @@ export class ThemeWave {
     this.origin = { ...origin };
   }
   background(time: number) { return this.backgroundFrom + (this.target - this.backgroundFrom) * ease((time - this.start) / .85); }
+  /** True while a wave can still change a card (max delay .6 + .58s, plus margin). */
+  animating(now: number) { const age = now - this.start; return age >= 0 && age < 1.5; }
   beginFrame() { this.latest.clear(); }
   sample(cell: ThemeCell, time: number) {
     const delay = Math.min(.6, Math.abs(cell.row - this.origin.row) * .034 + Math.abs(cell.lane - this.origin.lane) * .11);
