@@ -117,6 +117,8 @@
 
 - 2026-09-25：用户要求背景音乐换成安静版钢琴《国际歌》（鲍狄埃词 1871／狄盖特曲 1888，词曲公有领域，Digital Tradition ABC 转录），实现方式不变：三轨同步循环，`motif`=旋律、`atmosphere`=和声、`pulse`=低音，72 BPM、32 小节 106.67 秒（主歌+副歌）。源谱与合成脚本 `scripts/render-audio.mjs` 保留可复现；设置文案与试听文件改为「国际歌／`internationale-preview.mp3`」。听感待用户试听。
 
+- 2026-09-25：用户要求音乐默认开启。新访客（无已存 `music` 偏好）进入即预取并播放背景音乐；已存 `music:false` 继续视为显式静音并保持关闭。`scripts/check-startup-entry.mjs` 无需改动：其无偏好用例本来就断言 `loaded=true`／三轨，`sound-only`／静音偏好用例注入显式 `music:false` 不受影响。
+
 ## 档案内容维护
 
 - 档案内容独立保存在 `content/archives.json`，页面和 TXT 导出共用；修改步骤见 `content/README.md`。保留五列、每列八份和稳定编号约束，构建前校验；内容按纯文本显示。

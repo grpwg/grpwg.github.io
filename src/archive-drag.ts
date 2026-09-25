@@ -2,6 +2,14 @@ export type DragAxis = "lane" | "row";
 export type DragPosition = Record<DragAxis, number>;
 export type DragProjection = Record<DragAxis, { x: number; y: number }>;
 
+/**
+ * Release-speed ceiling (cells/second). Fast flicks stay expressive, but the
+ * cap keeps low-end devices from stuttering while dozens of cells would
+ * otherwise cross per second. Both tracks scale together so the glide keeps
+ * the released screen direction.
+ */
+export const MAX_SLIDE_SPEED = 24;
+
 /** Invert the camera's two projected tracks so the plane follows any pointer path. */
 export class ArchiveDrag {
   active = false;
@@ -85,10 +93,12 @@ export class ArchiveDrag {
     )
       return { lane: 0, row: 0 };
     const scale = 1000 / (last.time - first.time);
-    return {
-      lane: (last.value.lane - first.value.lane) * scale,
-      row: (last.value.row - first.value.row) * scale,
-    };
+    const lane = (last.value.lane - first.value.lane) * scale;
+    const row = (last.value.row - first.value.row) * scale;
+    const speed = Math.hypot(lane, row);
+    if (speed <= MAX_SLIDE_SPEED) return { lane, row };
+    const factor = MAX_SLIDE_SPEED / speed;
+    return { lane: lane * factor, row: row * factor };
   }
 }
 

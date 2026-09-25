@@ -143,7 +143,7 @@ const saved = new Set<string>(readLocal<string[]>("rhine-saved", []));
 const storedPrefs = readLocal<Partial<{ sound: boolean; music: boolean; soundVolume: number; musicVolume: number; reduced: boolean; quality: boolean; rendering: RenderQuality; superPerformance: boolean; colorTheme: "light" | "dark" }>>("rhine-settings", {});
 const prefs = {
   sound: true,
-  music: storedPrefs.music ?? false,
+  music: storedPrefs.music ?? true,
   soundVolume: .55,
   musicVolume: .5,
   reduced: matchMedia("(prefers-reduced-motion: reduce)").matches,
