@@ -7,6 +7,20 @@
 [data-layout="opening"] .scan { transform: scale(var(--opening-scan-scale)); transform-origin: center; }
 [data-layout="opening"][data-opening-portrait="true"] :is(.access-text, .auth-status) { font-size: 36px; }
 [data-layout="opening"][data-opening-portrait="true"] .scan > span { font-size: 52px !important; letter-spacing: 1px !important; }
+/* The portrait stage is 1280 wide but is shown at ~0.3 scale, so text sized for
+   the 1920 stage lands at 6-9 screen px. Keep the corner identity and the
+   right-hand annotation legible, and stop the annotation from wrapping into a
+   two-character column against the stage's right edge. */
+[data-layout="opening"][data-opening-portrait="true"] .powered { font-size: 46px; }
+[data-layout="opening"][data-opening-portrait="true"] #inspection-text {
+  left: auto;
+  right: 90px;
+  top: 462px;
+  width: 660px;
+  text-align: right;
+  font-size: 44px;
+}
+[data-layout="opening"][data-opening-portrait="true"] #inspection-text strong { font-size: 56px; margin-top: 22px; }
 [data-layout="opening"] .archive-callout { left: 50.520833%; width: 49.479167%; }
 [data-layout="opening"] .file-title { font-size: clamp(22px, 2vw, 32px); }
 [data-mobile-boot="true"] [data-layout="opening"] .powered { left: var(--edge); right: auto; bottom: 50px; }

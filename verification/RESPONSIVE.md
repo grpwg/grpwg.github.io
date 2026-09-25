@@ -53,3 +53,11 @@
 - 发现并修复一处真实缺陷：竖屏 `podcast-skin.css` 的 `.archive-callout { top: 52% }` 覆盖了 `responsive.css` 的 `top: auto`，与 `bottom: 205px` 共同把卡片拉伸成固定高度（360×640 时仅 102px，内容却需 222px），标题/摘要/"播放本期"按钮向下溢出并被播放器条盖住——`elementFromPoint` 命中 `player-elapsed`，按钮无法点击。改为竖屏底部锚定、高度自适应（内容向上生长）后，360×640／375×667 均恢复为可点击，且不与其他元素重叠。
 - 复查确认的"非缺陷"：底部计数 `.archive-counter` 为 `pointer-events:none` 的只读显示，位于"← 上一期／下一期 →"两端之间属设计；详情页签位于 `overflow:auto` 的 `.detail-content` 内，短屏时需滚动查看，其 rect 超出容器不代表可见重叠。
 - 局限：内置浏览器无法改变真实窗口，也不能触发媒体查询（`≤370px`、`≤440px` 横屏），故这些分支未在本次逐尺寸复测；横屏短屏此前由 `verification/RESPONSIVE.md` 既有条目覆盖。
+
+### 竖屏开场文字可读性（2026-09-25）
+
+用户反馈竖屏入场 "介绍字显示有问题、POWERED BY 字太小"。根因：竖屏开场用 `openingLayout` 把 1920×1080 美术放进 1280 宽的舞台再缩放到实际屏幕（手机约 0.28–0.34 倍），而 `#inspection-text`（`left:1202px`、23/30px）与 `.powered`（19px）沿用了为 1920 舞台设定的字号与坐标：前者距舞台右缘仅剩 78px，被压成两字一列并裁切；后者的 19px 经缩放后屏幕上只有约 5.8px。
+
+修复（仅作用于 `[data-layout="opening"][data-opening-portrait="true"]`，桌面与影厅版不受影响）：`.powered` 46px；`#inspection-text` 改为右对齐块（`right:90px; width:660px; top:462px`，44px），其 `strong` 56px。
+
+实机换算：手机 360×640／390×844／430×932 上标注 12.4／13.4／14.8px、加粗行 15.8／17.1／18.8px、POWERED 12.9／14／15.5px，均单行且距右缘 25–30px 不裁切；平板 768×1024／834×1194 上为 26.4／28.7px 与 33.6／36.5px。

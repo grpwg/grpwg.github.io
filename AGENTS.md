@@ -232,3 +232,8 @@
 
 - 用内置浏览器模拟 19 个手机/平板/桌面主流尺寸，检查交互元素重叠、越界与 `elementFromPoint` 命中；修复竖屏首页卡片被拉伸（`top:52%` 覆盖 `top:auto`）导致"播放本期"被播放器条盖住、无法点击的问题，改为竖屏底部锚定、高度自适应。
 - 只读计数与滚动容器内的元素经确认非缺陷；媒体查询分支（≤370px、≤440px 横屏）无法在窗口内模拟，未复测。详见 `verification/RESPONSIVE.md`。
+
+### 竖屏开场文字可读性（2026-09-25）
+
+- 修复竖屏开场（`openingLayout`，舞台 1280×按比例缩放）里沿用了 1920 舞台字号的两个元素：`#inspection-text`（"节目宗旨：让价值文章有声化"）因 `left:1202px` 贴右缘被压成两字一列且裁切；`.powered`（POWERED BY）缩放后仅约 6px。
+- 仅改 `[data-layout="opening"][data-opening-portrait="true"]`：`.powered` 46px；`#inspection-text` 右对齐块 44px、`strong` 56px。桌面与影厅版不变。详见 `verification/RESPONSIVE.md`。
