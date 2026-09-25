@@ -106,3 +106,7 @@ npm run build
 node scripts/render-audio.mjs /usr/bin/ffmpeg   # 省略参数仅生成 .tools/audio-render/ WAV 母带
 npm run build
 ```
+
+## 背景音乐响度（2026-09-25）
+
+用户反馈《国际歌》背景音乐偏小声。编曲本身是「安静版」，单音峰值约 0.03–0.06，播放链为 `musicVolume(默认 0.5) × 声部增益 × master(0.8)`。声部增益（`mixScene`）不受用户音量滑杆影响，对已存偏好的老访客也生效，因此按约 ×1.7 抬高：boot `[0.82,0.54,0.31]`、archive `[1.53,1.22,1.11]`、detail `[1.22,0.61,0.2]`；master 与限幅器继续兜底峰值。用户音量滑杆与独立开关不变。听感待用户试听确认。

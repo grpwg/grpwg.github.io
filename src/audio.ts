@@ -559,9 +559,13 @@ export class TerminalAudio {
   private mixScene() {
     if (!this.context) return;
     const gains = {
-      boot: [0.48, 0.32, 0.18],
-      archive: [0.9, 0.72, 0.65],
-      detail: [0.72, 0.36, 0.12],
+      // The Internationale is a deliberately soft felt-piano arrangement
+      // (per-voice peaks around 0.03-0.06), so the stem gains lift it into the
+      // mix. These are independent of the user's music-volume slider, so a
+      // returning visitor hears the corrected balance too.
+      boot: [0.82, 0.54, 0.31],
+      archive: [1.53, 1.22, 1.11],
+      detail: [1.22, 0.61, 0.2],
     }[this.scene];
     this.stemGains.forEach((g, i) =>
       level(g.gain, gains[i], this.context!.currentTime, 1.1),
