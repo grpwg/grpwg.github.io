@@ -114,12 +114,12 @@ try {
   await page.screenshot({ path: 'verification/firefox/detail.png' });
   results.detail = true;
 
-  // The service worker must register: Firefox desktop has no install prompt
-  // but offline use works.
+  // The terminal is an online player: no service worker and no offline copy,
+  // so a visit always runs the release currently deployed.
   results.serviceWorker = await page.evaluate(async () => {
     if (!('serviceWorker' in navigator)) return 'unsupported';
-    const registration = await navigator.serviceWorker.ready;
-    return registration.active ? 'active' : 'installed';
+    const registration = await navigator.serviceWorker.getRegistration();
+    return registration ? 'registered' : 'none';
   });
 
   assert.deepEqual(errors, []);

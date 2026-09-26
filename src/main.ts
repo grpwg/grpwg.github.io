@@ -76,7 +76,6 @@ $("#stage").innerHTML = `
   </section>
   <div class="powered">POWERED BY <b>光辉革命播客</b><i></i></div>
   <footer class="system-footer"><span><i class="status-light"></i> 全世界无产者，联合起来</span><span>光辉革命播客 <i>／</i> <span id="clock">00:00:00</span></span><button data-action="replay" title="重播启动流程">重新初始化 ↗</button></footer>
-  <div id="pwa-update-notice" class="pwa-update-notice" role="status" hidden><span>新版本已就绪</span><button data-pwa-action="update">更新并重启 ↻</button></div>
   <div id="modal-root"></div><div id="toast" class="toast" role="status"></div>
   <div id="loading" class="loading"><div class="loading-mark">${logo}</div><span>正在连接节目源</span><i></i></div>
 `;
@@ -1204,9 +1203,8 @@ function completeStartup(silent: boolean) {
     }
   }, fade);
   requestAnimationFrame(frame);
-  // Do not compete with entry audio/font downloads. Full offline installation
-  // begins after startup is complete and remains atomic.
-  setTimeout(() => void initPwa(notify), 1500);
+  // Installation guidance is idle work; attach it once the entry is under way.
+  setTimeout(() => initPwa(notify), 1500);
 }
 updateSelection();
 void start();

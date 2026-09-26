@@ -34,16 +34,15 @@
 
 用户已在 iPhone / Safari 试用并反馈没有明显问题。提供 `npm run review:mobile` 与 `reference/mobile-review.html`，可在同一局域网测试阵列、切档、解密和查看器并保存帧间隔报告；尚未收到真机报告，因此不声称已取得 iPhone 帧率或 GPU 耗时数据。Windows WebKit 不支持本次音频环境，声音听感与 iPhone 音频需以真机为准。
 
-## PWA
+## 主屏幕安装（2026-09-26：离线缓存已移除）
 
-`scripts/check-pwa.mjs` 使用生产构建验证：
+本站是在线播放器，按用户要求移除 Service Worker 与完整离线预缓存（`scripts/check-pwa.mjs`、`check-pwa-recovery.mjs`、`check-font-update.mjs` 随之删除）。现有检查：
 
-- manifest 与图标；62 个资源、约 28 MiB 的完整版本安装。
-- 断网重新加载、字体、TXT 导出、模型查看与拆解、音乐资源读取。
-- 新版本等待、用户明确更新后重启、清理本应用旧版本、保留其他缓存及收藏偏好。
-- 模拟一个图标返回 503 导致更新失败：删除不完整新版本，旧版本继续离线打开。
+- `scripts/check-web-integration.mjs` 断言 `dist/index.html` 带 `rel="manifest"`，不再检查 `sw.js`。
+- `scripts/check-firefox.mjs` 不再等待 Service Worker；`scripts/check-startup-entry.mjs` 仍断言 `data-offline-ready` 从未写入。
+- 保留 manifest 与 Apple meta，可“添加到主屏幕”并以 standalone 打开；无离线浏览承诺。
 
-这些是本地 Chromium 的 Service Worker 实测。iPhone 从主屏幕启动、系统安全区、缓存保留时长和音频自动播放限制，需要实际设备继续确认。使用步骤见 [PWA 说明](../docs/PWA.md)。
+iPhone 从主屏幕启动、系统安全区与音频自动播放限制，需要实际设备继续确认。
 
 ## 主流机型适配复查（2026-09-25）
 

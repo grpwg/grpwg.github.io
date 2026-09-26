@@ -27,7 +27,7 @@
 - `scripts/check-array-input.mjs`：实际 Chromium WebGL 页面，1920×1080 鼠标与 390×844 CDP 触摸。检查不足半格时阵列已经跟随、松手前切档、吸附、反向、悬停升起与复原、点击选择、滚轮、弹窗隔离、全档案顺序循环（走过全部栏目并回到起点）、捕获丢失和多指取消、取消后恢复、详情旋转。
 - `scripts/check-responsive.mjs`：Chromium 手机横屏与竖屏原有回归，包括滑动方向、循环、详情、正文、查看器和弹窗。
 - Windows Playwright WebKit 的 390×844 竖屏完整回归通过；使用合成 PointerEvent，不代表 iPhone 真机多指行为。初次开发服务器运行在查看器步骤超时，改用固定生产构建后完整通过。
-- `scripts/check-loop.mjs`：20,000 次相邻循环导航；`npm run check:viewport`：视口与原片构图；`npm run build`：TypeScript、资源与 PWA 构建。
+- `scripts/check-loop.mjs`：20,000 次相邻循环导航；`npm run check:viewport`：视口与原片构图；`npm run build`：TypeScript 与资源构建。
 
 本地截图和报告在 `.tools/array-input/`、`.tools/responsive/`。手机触摸验证属于桌面浏览器模拟，没有新增 iPhone 真机测试数据。
 

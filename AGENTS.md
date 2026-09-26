@@ -34,7 +34,7 @@
 ## 已移除：Wallpaper Engine 支持（2026-09-24）
 
 - 用户于 2026-09-24 要求移除 Wallpaper Engine 支持。`wallpaper/` 工程、`npm run build:wallpaper`、宿主桥接（`wallpaperPropertyListener`、`rhine-wallpaper-*`、`rhineWallpaper*`）以及仅壁纸启用的桌面工作台、波纹接力小游戏、HUD 曲面视差与全局屏幕滤镜、界面边距滑杆、自定义图片背景、3D 卸载入口全部删除；本仓库现在只有网页一种形态，不再有 `--mode wallpaper`。
-- 网页继续保留：超级性能模式、`<select>` 自定义画质、PWA、暗色主题、自适应阵列裁剪、开场铺满实际视口、滚动数字、启动声音解锁与触摸操作。
+- 网页继续保留：超级性能模式、`<select>` 自定义画质、主屏幕安装（无离线缓存）、暗色主题、自适应阵列裁剪、开场铺满实际视口、滚动数字、启动声音解锁与触摸操作。
 - 一并删除 `docs/WALLPAPER-ENGINE.md`、`docs/WORKSHOP-PUBLISH.md`、`docs/WORKSHOP-DESCRIPTION.txt`、`docs/DESKTOP-FOLDERS.md` 及壁纸专属检查脚本与 `reference/*-review.html` 对照页。`verification/` 中涉及 WE 的记录仅作历史参考，其引用的脚本与对照页已不存在。
 
 ## 实现流程与技术栈
@@ -166,18 +166,18 @@
 - 触摸在阵列区域左右切列、上下切档；详情获得净空后可单指检查，360° 查看器单指旋转、双指缩放和平移。正文滚动与场景手势隔离，旋转屏幕保留当前选档、视角与拆解状态。
 - 画质仍采用已有用户设置与原始默认值；不得以手机类型直接切到删减光影的性能档。实机校准必须区分真实 iPhone 数据、桌面 WebKit 兼容性检查与 Chromium 视口模拟。实现见 `src/viewport-layout.ts`、`src/responsive.css`，验证见 `verification/RESPONSIVE.md`。
 
-## PWA 与线上入口
+## 主屏幕安装与线上入口（2026-09-26：移除离线缓存）
 
 - 用户要求增加 PWA，以便 iPhone 从主屏幕进入独立窗口；线上入口为本仓库 GitHub Pages 的 https://grpwg.github.io/，README 保留在线入口。
-- 正式构建缓存完整资源版本，更新下载失败时保留旧版。新版本准备好后由用户在设置中更新并重启，不中断当前浏览；保留收藏和偏好。
-- 开发模式不注册 Service Worker。图标复用项目共享品牌路径；主屏幕安装、离线与更新说明见 `docs/PWA.md`，验证见 `verification/RESPONSIVE.md`。
-- 针对 Win11 Chrome / Edge 的反馈，设置图标保留可见“设置”文字，新版本提供可直接点击的更新入口；`update.html` 从网络获取，用于旧版页面无法找到更新按钮时恢复，不清除收藏或偏好。
-- 动态效果默认遵循系统偏好，设置中明确说明跳过开机和简化选档的影响，并提供“启用完整动效并重播”。本站明确选择优先于系统默认，正文解密遮罩也遵循同一设置。验证见 `verification/PWA-RECOVERY.md`。
+- 用户随后指出本站本质是**在线播放器**（音频流、模型与字体都来自网络），要求阉割离线内容。已删除 Service Worker、完整离线预缓存（约 36 MiB）、更新/重试／检查更新入口、`update.html`、`docs/PWA.md` 与 `verification/PWA-RECOVERY.md` 及相关检查脚本（`check-pwa.mjs`、`check-pwa-recovery.mjs`、`check-font-update.mjs`）；`npm run build` 不再生成 `sw.js`／`pwa-build.json`。此前 2026-09-25 加的「检查更新」按钮也一并删除——没有 Service Worker 就不需要它。
+- 保留 `manifest.webmanifest` 与 Apple meta，仍可“添加到主屏幕”并以 standalone 窗口打开。没有 Service Worker 意味着每次访问都直接使用当前线上版本，不会再出现手机停留在旧版、或更新提示不出现的问题。代价：Chrome/Android 的一键安装提示依赖 Service Worker，不再出现，改用浏览器菜单添加。
+- 设置中保留“APP / 主屏幕”安装引导与安装按钮，不承诺离线浏览。
+- 目标设备的动态效果默认遵循系统偏好，设置中明确说明跳过开机和简化选档的影响，并提供“启用完整动效并重播”。本站明确选择优先于系统默认，正文解密遮罩也遵循同一设置。
 
 ## 字体分包与开场启动（issue #6、#7）
 
 - 用户于 2026-09-10 明确批准：比较 `misans` 与 `misans-webfont` 第三方分包，在确认加载收益和显示效果后替换官方整包。本项目允许采用第三方 MiSans 分包，此明确授权覆盖此前禁止第三方分包的全局默认；保留字体署名、许可、来源和固定版本记录。
-- 分包随项目同源部署，按页面字符加载；保持现有 MiSans 的字形、字重映射与排版。PWA 仍缓存完整版本，避免新档案或离线检索缺字。
+- 分包随项目同源部署，按页面字符加载；保持现有 MiSans 的字形、字重映射与排版。离线缓存已于 2026-09-26 移除，字体改为按需加载。
 - 比较后采用 `misans-webfont@4.3.1`，字体 4.003；固定版本与源哈希保存在 public/fonts。品牌三行宽度按基线重新校准，首次入口字体约 415 KiB。选择依据、完整离线体积取舍与验证见 `verification/STARTUP-LOADING.md`。
 - 开场等待用户点击、轻触或键盘启动，解锁声音并完成准备后统一开始音画；保留静音和减少动态效果偏好，加载失败提供重试与无声进入。
 - 用户授权完成验证、提交及同步后，回复 GitHub issue #6、#7 并关闭它们。
@@ -208,7 +208,7 @@
 - 2026-09-24：用户要求添加 Firefox 支持。本机无任何系统浏览器，采用外置 Playwright + Gecko 实测（装在 `/tmp/opencode`，不进仓库、不改 `package.json`），配合一次 MDN BCD / Bugzilla 只读调研；目标为桌面最新版与 ESR ≥ 140。
 - 阻断修复：Firefox 从未实现 `AudioParam.cancelAndHoldAtTime`（bug 1308431），原代码使启动卡在「声音暂未就绪」；`src/audio.ts` 的 `level()` 改为特性检测降级（`cancelScheduledValues` + `setValueAtTime(param.value)`），Chromium／Safari 路径不变。另有 PWA 安装引导文案按能力分支（Firefox 桌面无安装入口）、`navigator.userActivation?.isActive` 可选链。
 - 视觉与健壮性：`src/responsive.css` 三处滚动容器补 `scrollbar-color: #bbb4a6 transparent;`；清理 `src/podcast-skin.css` 孤立声明块。
-- 脚本：5 个硬编码 `channel:'msedge'` 的检查改为 `REVIEW_CHANNEL` 覆盖（默认仍为 Edge，空值用 Playwright 自带 Chromium）；新增 `npm run check:firefox`，覆盖启动解锁、WebGL2 阵列、MRT 共享深度（须先切 `original` 预设，否则 AO／景深为 0 测不到）、弹窗渲染挂起、滚轮切档、详情与 Service Worker。
+- 脚本：5 个硬编码 `channel:'msedge'` 的检查改为 `REVIEW_CHANNEL` 覆盖（默认仍为 Edge，空值用 Playwright 自带 Chromium）；新增 `npm run check:firefox`，覆盖启动解锁、WebGL2 阵列、MRT 共享深度（须先切 `original` 预设，否则 AO／景深为 0 测不到）、弹窗渲染挂起、滚轮切档、详情。2026-09-26 移除离线缓存后，检查改为确认未注册 Service Worker。
 - 结果与限制见 `verification/FIREFOX.md`、`verification/firefox/`。待人工确认：Firefox ramp 听感（bug 2011524）、慢滚轮手感、Firefox Android 的 `display-mode`。
 
 ## 无头 Chromium 的 GPU 后端

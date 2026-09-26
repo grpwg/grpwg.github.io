@@ -75,10 +75,9 @@ try {
   await page.screenshot({ path: 'verification/web-integration/mobile-landscape.png' });
   const html = await readFile('dist/index.html', 'utf8');
   assert.match(html, /rel="manifest"/); assert.doesNotMatch(html, /wallpaperPropertyListener/);
-  const worker = await readFile('dist/sw.js', 'utf8'); assert.ok(worker.length > 1000);
   assert.deepEqual(errors, []);
-  results.startupGesture = results.persistedPerformance = results.restoredQuality = results.numericMotion = results.detailPanel = results.pwaBuild = true;
+  results.startupGesture = results.persistedPerformance = results.restoredQuality = results.numericMotion = results.detailPanel = true;
   results.errors = errors;
   await writeFile('verification/web-integration/results.json', JSON.stringify(results, null, 2));
-  console.log('Web entry, host isolation, theme, performance persistence/restoration, keyboard, clock animation, detail panel, responsive and PWA build passed.');
+  console.log('Web entry, host isolation, theme, performance persistence/restoration, keyboard, clock animation, detail panel and responsive layout passed.');
 } finally { await browser.close(); }

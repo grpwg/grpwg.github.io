@@ -14,7 +14,7 @@
 ### 2. PWA 安装引导文案在 Firefox 桌面不成立
 
 - Firefox 桌面永不触发 `beforeinstallprompt`，也没有「安装到设备」菜单项，原兜底文案「可通过浏览器菜单安装或添加到主屏幕」承诺了不存在的入口。
-- 修复：`src/pwa.ts` 增加 `installlessFirefox()`（UA 判定，排除 Android），改用「本浏览器不提供一键安装；离线资源已就绪，收藏本站即可离线浏览。」安装按钮仍只在 `installPrompt` 存在时渲染。
+- 修复：`src/pwa.ts` 增加 `installlessFirefox()`（UA 判定，排除 Android），改用「本浏览器不提供一键安装；收藏本站即可随时进入。」安装按钮仍只在 `installPrompt` 存在时渲染。（2026-09-26 移除离线缓存后文案相应去掉“离线”字样。）
 - 回归保护：`check-firefox.mjs` 断言弹窗内 `#pwa-settings` 首段文案。
 
 ### 3. `navigator.userActivation` 在 Firefox < 120 不存在
@@ -44,7 +44,7 @@
 | 弹窗渲染挂起 | 模糊遮罩期间 `drawnBehindBackdrop = 0`（一帧都不画），关闭后 `resumed > 0` 恢复绘制 |
 | 滚轮切档 | `wheelChanged: true` |
 | 详情模式 | 进入成功，截图正常 |
-| Service Worker | `active`（Firefox 桌面虽无安装入口，离线可用） |
+| Service Worker | 已于 2026-09-26 移除（在线播放器，不再离线缓存）；本轮检查改为断言不注册 |
 
 > 注：默认「性能」预设 `aoSamples:0 / depthOfField:0`，共享深度那段非 three 内建材质根本不会编译；因此脚本先切 `original` 再断言，避免「通过但没测到」。
 
