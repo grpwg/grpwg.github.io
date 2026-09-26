@@ -171,7 +171,8 @@
 - 用户要求增加 PWA，以便 iPhone 从主屏幕进入独立窗口；线上入口为本仓库 GitHub Pages 的 https://grpwg.github.io/，README 保留在线入口。
 - 用户随后指出本站本质是**在线播放器**（音频流、模型与字体都来自网络），要求阉割离线内容。已删除 Service Worker、完整离线预缓存（约 36 MiB）、更新/重试／检查更新入口、`update.html`、`docs/PWA.md` 与 `verification/PWA-RECOVERY.md` 及相关检查脚本（`check-pwa.mjs`、`check-pwa-recovery.mjs`、`check-font-update.mjs`）；`npm run build` 不再生成 `sw.js`／`pwa-build.json`。此前 2026-09-25 加的「检查更新」按钮也一并删除——没有 Service Worker 就不需要它。
 - 保留 `manifest.webmanifest` 与 Apple meta，仍可“添加到主屏幕”并以 standalone 窗口打开。没有 Service Worker 意味着每次访问都直接使用当前线上版本，不会再出现手机停留在旧版、或更新提示不出现的问题。代价：Chrome/Android 的一键安装提示依赖 Service Worker，不再出现，改用浏览器菜单添加。
-- 设置中保留“APP / 主屏幕”安装引导与安装按钮，不承诺离线浏览。
+- 设置中不再显示“APP / 主屏幕”介绍与安装按钮（用户 2026-09-26 要求删掉该段文案）：`src/pwa.ts` 整文件删除，`src/main.ts` 不再导入或调用。`manifest.webmanifest` 与 Apple meta 仍然保留，用户仍可用浏览器菜单“添加到主屏幕”并以 standalone 打开，只是应用界面不再宣传这件事。
+- 缓存仍是浏览器自己的 HTTP 缓存，与本次改动无关：GitHub Pages 对 HTML、hashed 资源、字体、模型统一返回 `cache-control: max-age=600` 加 `ETag`（无法自定义头部）。10 分钟内直接命中本地缓存，之后带 `If-None-Match` 条件请求，未变更则返回 304 只走头部——重复访问依旧很快。失去的只有真正的离线（无网络时打不开）。
 - 目标设备的动态效果默认遵循系统偏好，设置中明确说明跳过开机和简化选档的影响，并提供“启用完整动效并重播”。本站明确选择优先于系统默认，正文解密遮罩也遵循同一设置。
 
 ## 字体分包与开场启动（issue #6、#7）

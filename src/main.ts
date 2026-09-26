@@ -14,7 +14,6 @@ import "./responsive.css";
 import "./podcast-skin.css";
 import { viewportLayout, openingLayout } from "./viewport-layout";
 import { assetUrl } from "./asset-url";
-import { initPwa, pwaSettingsMarkup } from "./pwa";
 import { createRollingNumber, createRollingText } from "@kitlangton/rolling-number";
 import { ArchiveScene } from "./scene";
 import type { ScreenRect } from "./occlusion";
@@ -775,7 +774,7 @@ function motionSettingsMarkup() {
     : "当前使用完整动效。"}</p>${prefs.reduced ? '<button data-action="enable-motion">启用完整动效并重播 ↻</button>' : ""}</div>`;
 }
 function settingsMarkup() {
-  return `<h2>终端设置<small>SYSTEM PREFERENCES</small></h2><p class="settings-intro">光辉革命播客 <span>·</span> 全世界无产者，联合起来</p><div class="settings-list">${themeSettingsMarkup(prefs.colorTheme === "dark")}<label><div><strong>性能模式</strong><span>降低三维画质和渲染分辨率，保留完整动效；关闭后恢复原画质</span></div><input type="checkbox" data-pref="superPerformance" ${prefs.superPerformance ? "checked" : ""}/><i class="toggle"></i></label>${audioSettingsMarkup(prefs)}<label><div><strong>减少动态效果</strong><span>跳过开机动画，简化选档、镜头和文字动效</span></div><input type="checkbox" data-pref="reduced" ${prefs.reduced ? "checked" : ""}/><i class="toggle"></i></label></div>${motionSettingsMarkup()}${qualityMarkup(prefs.rendering)}${pwaSettingsMarkup()}<div class="settings-shortcuts"><span>操作说明</span><p><kbd>←</kbd><kbd>→</kbd> 切栏 <kbd>↑</kbd><kbd>↓</kbd> 选期 <kbd>ENTER</kbd> 播放 <kbd>/</kbd> 检索 <kbd>ESC</kbd> 返回</p></div><div class="settings-bottom">${document.fullscreenEnabled ? '<button data-action="fullscreen">全屏 <span>↗</span></button>' : ''}<button data-action="restart">重新开始 <span>↻</span></button></div><div class="modal-bottom"><span>VERITAS · POPULUS · VOX</span><span>GLORIOUS REVOLUTION PODCAST / 1.0 · 使用 MiSans 字体（小米） <a href="${assetUrl("fonts/MiSans-license.pdf")}" target="_blank" rel="noopener">字体许可</a></span><span>由 光辉革命播客 制作</span></div>`;
+  return `<h2>终端设置<small>SYSTEM PREFERENCES</small></h2><p class="settings-intro">光辉革命播客 <span>·</span> 全世界无产者，联合起来</p><div class="settings-list">${themeSettingsMarkup(prefs.colorTheme === "dark")}<label><div><strong>性能模式</strong><span>降低三维画质和渲染分辨率，保留完整动效；关闭后恢复原画质</span></div><input type="checkbox" data-pref="superPerformance" ${prefs.superPerformance ? "checked" : ""}/><i class="toggle"></i></label>${audioSettingsMarkup(prefs)}<label><div><strong>减少动态效果</strong><span>跳过开机动画，简化选档、镜头和文字动效</span></div><input type="checkbox" data-pref="reduced" ${prefs.reduced ? "checked" : ""}/><i class="toggle"></i></label></div>${motionSettingsMarkup()}${qualityMarkup(prefs.rendering)}<div class="settings-shortcuts"><span>操作说明</span><p><kbd>←</kbd><kbd>→</kbd> 切栏 <kbd>↑</kbd><kbd>↓</kbd> 选期 <kbd>ENTER</kbd> 播放 <kbd>/</kbd> 检索 <kbd>ESC</kbd> 返回</p></div><div class="settings-bottom">${document.fullscreenEnabled ? '<button data-action="fullscreen">全屏 <span>↗</span></button>' : ''}<button data-action="restart">重新开始 <span>↻</span></button></div><div class="modal-bottom"><span>VERITAS · POPULUS · VOX</span><span>GLORIOUS REVOLUTION PODCAST / 1.0 · 使用 MiSans 字体（小米） <a href="${assetUrl("fonts/MiSans-license.pdf")}" target="_blank" rel="noopener">字体许可</a></span><span>由 光辉革命播客 制作</span></div>`;
 }
 
 document.addEventListener("input", (e) => {
@@ -1203,8 +1202,6 @@ function completeStartup(silent: boolean) {
     }
   }, fade);
   requestAnimationFrame(frame);
-  // Installation guidance is idle work; attach it once the entry is under way.
-  setTimeout(() => initPwa(notify), 1500);
 }
 updateSelection();
 void start();

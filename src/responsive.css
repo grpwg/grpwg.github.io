@@ -41,12 +41,6 @@
 .motion-preference-note { margin-top: 12px; color: #776f60; font-size: 12px; line-height: 1.7; }
 .motion-preference-note p { margin: 0; }
 .motion-preference-note button { min-height: 44px; margin-top: 4px; border-bottom: 1px solid #8e897b; font-size: 12px; }
-.pwa-settings { margin-top: 24px; padding: 20px 0; border-block: 1px solid #c1b8a7; }
-.pwa-settings h3 { font-size: 12px; font-weight: 400; letter-spacing: .8px; margin: 0 0 12px; }
-.pwa-settings p { font-size: 12px; line-height: 1.8; margin: 6px 0; color: #776f60; }
-.pwa-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; font-size: 12px; }
-.pwa-actions:empty { display: none; }
-.pwa-actions button { min-height: 44px; border-bottom: 1px solid #8e897b; font-size: 12px; }
 @media (display-mode: standalone) { body { overscroll-behavior: none; } }
 [data-mobile-boot="true"] > .mobile-entry { display: flex; position: absolute; bottom: max(28px, env(safe-area-inset-bottom)); right: max(24px, env(safe-area-inset-right)); align-items: center; gap: 32px; min-height: 48px; padding: 0 16px; font-size: 14px; border-bottom: 1px solid #8e897b; }
 [data-mobile-boot="true"] .skip { display: none; }

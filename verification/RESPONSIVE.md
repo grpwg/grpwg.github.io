@@ -39,8 +39,8 @@
 本站是在线播放器，按用户要求移除 Service Worker 与完整离线预缓存（`scripts/check-pwa.mjs`、`check-pwa-recovery.mjs`、`check-font-update.mjs` 随之删除）。现有检查：
 
 - `scripts/check-web-integration.mjs` 断言 `dist/index.html` 带 `rel="manifest"`，不再检查 `sw.js`。
-- `scripts/check-firefox.mjs` 不再等待 Service Worker；`scripts/check-startup-entry.mjs` 仍断言 `data-offline-ready` 从未写入。
-- 保留 manifest 与 Apple meta，可“添加到主屏幕”并以 standalone 打开；无离线浏览承诺。
+- `scripts/check-firefox.mjs` 不再等待 Service Worker，也不再断言 `#pwa-settings` 文案（该区块已删除）；`scripts/check-startup-entry.mjs` 仍断言 `data-offline-ready` 从未写入。
+- 保留 manifest 与 Apple meta，可用浏览器菜单“添加到主屏幕”并以 standalone 打开；应用界面不再提示，也不提供离线浏览。
 
 iPhone 从主屏幕启动、系统安全区与音频自动播放限制，需要实际设备继续确认。
 

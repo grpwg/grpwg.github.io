@@ -15,7 +15,7 @@
 
 - Firefox 桌面永不触发 `beforeinstallprompt`，也没有「安装到设备」菜单项，原兜底文案「可通过浏览器菜单安装或添加到主屏幕」承诺了不存在的入口。
 - 修复：`src/pwa.ts` 增加 `installlessFirefox()`（UA 判定，排除 Android），改用「本浏览器不提供一键安装；收藏本站即可随时进入。」安装按钮仍只在 `installPrompt` 存在时渲染。（2026-09-26 移除离线缓存后文案相应去掉“离线”字样。）
-- 回归保护：`check-firefox.mjs` 断言弹窗内 `#pwa-settings` 首段文案。
+- 回归保护：`check-firefox.mjs` 曾断言弹窗内 `#pwa-settings` 首段文案；2026-09-26 该区块与断言一并删除。
 
 ### 3. `navigator.userActivation` 在 Firefox < 120 不存在
 
